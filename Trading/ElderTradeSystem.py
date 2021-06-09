@@ -116,7 +116,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} macd_sec_dpc : {str(e)}", log_lv=3)
 
 
-    def is_buy_sell_nomal(self, macdhist, slow_d, slow_d_buy, slow_d_sell):
+    def is_buy_sell_nomal(self, hist_inclination_avg, macdhist, slow_d, slow_d_buy, slow_d_sell):
         """
         株を買うか売るか見守るか選択
         :param macd_sec_dpc:
@@ -127,7 +127,7 @@ class ElderTradeSystem:
             if macdhist is None or slow_d is None:
                 self.__logger.write_log(f"is_buy_sell_nomal macdhist or slow_d is None", log_lv=3)
                 return None
-            if macdhist < -280.0 and slow_d <= slow_d_buy:
+            if hist_inclination_avg < 0 and macdhist < -280.0 and slow_d <= slow_d_buy:
                 # self.__logger.write_log(f"\t산다\tdate \t{print_info_list[1]}\t", log_lv=2)
                 # self.__logger.write_log(f"\t산다\tcode \t{print_info_list[0]}\t", log_lv=2)
                 # self.__logger.write_log(f"\t산다\tmacd_sec_dpc \t{macd_sec_dpc}\t", log_lv=2)
@@ -137,7 +137,7 @@ class ElderTradeSystem:
                 # self.__logger.write_log(f"\t산다\tmacd_sec_dpc \t{print_info_list[4]}\t", log_lv=2)
                 # self.__logger.write_log(f"------------------------------------", log_lv=2)
                 result = True
-            elif macdhist > 250.0 and slow_d >= slow_d_sell:
+            elif hist_inclination_avg > 0 and macdhist > 250.0 and slow_d >= slow_d_sell:
                 # self.__logger.write_log(f"\t판다\tdate \t{print_info_list[1]}\t", log_lv=2)
                 # self.__logger.write_log(f"\t판다\tcode \t{print_info_list[0]}\t", log_lv=2)
                 # self.__logger.write_log(f"\t판다\tmacd_sec_dpc \t{macd_sec_dpc}\t", log_lv=2)

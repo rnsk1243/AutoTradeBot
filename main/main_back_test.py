@@ -36,10 +36,10 @@ else:
         benefit_OK = 0
         benefit_NO = 0
 
-        test_days = 10  # day
+        test_days = 12  # day
         analysis_data_amount = sg.g_one_day_data_amount * 5
         macd_long_day = 5  # day
-        msd_rolling_day = 3  # // day
+        msd_rolling_day = 30  # // day
         slow_d_buy = 10
         slow_d_sell = 85
         is_graph = False

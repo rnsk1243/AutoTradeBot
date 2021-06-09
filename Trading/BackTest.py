@@ -58,7 +58,8 @@ class BackTest(bt.Strategy):
             slow_d = temp_df['slow_d']
 
             # 買う；True　売る；False 何もしない；None
-            is_buy_sell = self.__ets.is_buy_sell_nomal(macdhist=macdhist,
+            is_buy_sell = self.__ets.is_buy_sell_nomal(hist_inclination_avg=hist_inclination_avg,
+                                                       macdhist=macdhist,
                                                        slow_d=slow_d,
                                                        slow_d_buy=self.__slow_d_buy,
                                                        slow_d_sell=self.__slow_d_sell)
