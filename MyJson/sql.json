@@ -1,0 +1,38 @@
+{
+  "": "CREATE文",
+  "CREATE_001": "CREATE TABLE IF NOT EXISTS company_info ( code VARCHAR(20), company VARCHAR(40), last_update DATE, PRIMARY KEY (code))",
+  "CREATE_002": "CREATE TABLE IF NOT EXISTS daily_price (code VARCHAR(20), date DATE, open BIGINT(20), high BIGINT(20), low BIGINT(20), close BIGINT(20), diff BIGINT(20), volume BIGINT(20), PRIMARY KEY (code, date))",
+
+  "": "REPLACE文",
+  "REPLACE_001": "REPLACE INTO company_info (code, company, last_update) VALUES ('{}', '{}', '{}')",
+  "REPLACE_002": "REPLACE INTO daily_price_month VALUES ('{}', '{}', {}, {}, {}, {}, {}, {})",
+  "REPLACE_003": "REPLACE INTO daily_price_week VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {})",
+  "REPLACE_004": "REPLACE INTO daily_price_day VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {})",
+  "REPLACE_005": "REPLACE INTO daily_price_min VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {})",
+  "REPLACE_006": "REPLACE INTO daily_price_tick VALUES ('{}', {}, '{}', {}, {}, {}, {}, {}, {}, {})",
+
+  "": "SELECT文",
+  "SELECT_999": "SELECT * FROM company_info WHERE company_info.company = '{}'",
+  "SELECT_001": "SELECT * FROM company_info",
+  "SELECT_002": "SELECT max(last_update) FROM company_info",
+  "SELECT_003": "SELECT * FROM daily_price WHERE (daily_price.code, daily_price.date) IN (SELECT daily_price.code, MIN(daily_price.date) FROM daily_price GROUP BY daily_price.code)",
+  "SELECT_004": "SELECT * FROM daily_price_day WHERE code = '{}' and date >= '{}' and date <= '{}'",
+  "SELECT_005": "SELECT * FROM daily_price_min WHERE code = '{}' and date >= '{}' and date <= '{}'",
+  "SELECT_006": "SELECT * FROM daily_price_month WHERE code = '{}' and date >= '{}' and date <= '{}'",
+  "SELECT_007": "SELECT * FROM daily_price_tick WHERE code = '{}' and date >= '{}' and date <= '{}'",
+  "SELECT_008": "SELECT * FROM daily_price_week WHERE code = '{}' and date >= '{}' and date <= '{}'",
+  "SELECT_009": "SELECT MAX(daily_price.date) FROM daily_price WHERE daily_price.code = '{}' AND daily_price.open = '0'",
+  "SELECT_010": "SELECT *\nFROM daily_price\nWHERE daily_price.code = '{}' AND daily_price.date > IFNULL((\nSELECT MAX(daily_price.date)\nFROM daily_price\nWHERE daily_price.code = '{}' AND daily_price.open = '0'), '1900-01-01')",
+  "SELECT_011": "SELECT *\nFROM daily_price\nWHERE daily_price.code = '{}' AND daily_price.date < IFNULL((\nSELECT MIN(daily_price.date)\nFROM daily_price\nWHERE daily_price.code = '{}' AND daily_price.open = '0'), '1900-01-01')",
+  "SELECT_012": "SELECT * FROM daily_price_min WHERE daily_price_min.code = '{}' ORDER BY DATE DESC LIMIT 1",
+  "SELECT_013": "SELECT * FROM daily_price_min WHERE daily_price_min.code = '{}' and daily_price_min.date > '{}'",
+  "SELECT_014": "",
+  "SELECT_015": "",
+  "SELECT_016": "",
+  "SELECT_017": "",
+  "SELECT_018": "",
+  "SELECT_019": ""
+
+
+}
+

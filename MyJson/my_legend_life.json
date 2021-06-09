@@ -1,0 +1,17 @@
+{
+	"my_legend_life": {
+		"2021-06-09": {
+			"return_pro": "-2.0%",
+			"month_money": 10000000,
+			"today_money": 9800000,
+			"today_buy_list": [
+				"A00530",
+				"A000020"
+			],
+			"today_sell_list": [],
+			"bought_stock_list": [
+				"A12345"
+			]
+		}
+	}
+}

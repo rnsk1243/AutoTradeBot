@@ -1,0 +1,14 @@
+creonInfo.json
+dbInfo.json
+Test*.py
+test*.py
+*.log
+__pycache__/
+*.idea/
+*.py[cod]
+*$py.class
+log/
+csv/
+xlsx/
+*.xlsx
+*.csv
