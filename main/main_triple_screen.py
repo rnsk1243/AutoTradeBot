@@ -206,7 +206,7 @@ if __name__ == '__main__':
                 time.sleep(5)
 
     except Exception as ex:
-        sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {str(ex)}", log_lv=5)
+        sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {str(ex)}", log_lv=5, is_slacker=True)
 
 else:
     try:
