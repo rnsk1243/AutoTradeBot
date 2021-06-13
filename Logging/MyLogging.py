@@ -1,4 +1,5 @@
 import logging.handlers
+from requests import get
 from InitGlobal import stock_global as sg
 from datetime import datetime
 from Slacker import Slacker_Message as sm
@@ -52,6 +53,8 @@ class MyLogging:
         elif log_lv == 4:
             self.__logger.error(tmp)
         elif log_lv == 5:
+            ip = get("https://api.ipify.org").text
+            tmp = tmp + f"\r\nMy public IP address : {ip}"
             self.__logger.critical(tmp)
         else:
             self.__logger.debug(tmp)
