@@ -69,6 +69,7 @@ class ElderTradeSystem:
             macd = ema_middle - ema_long  # MACD線
             signal = macd.ewm(span=days_short).mean()  # シグナル
             macdhist = macd - signal # MACD ヒストグラム
+            macdhist_ave = macdhist.sum() // len(macdhist)
 
             ndays_high = df.high.rolling(window=len(df), min_periods=1).max()  # 7日最大値
             ndays_low = df.low.rolling(window=len(df), min_periods=1).min()  # 7日最小値
@@ -82,7 +83,7 @@ class ElderTradeSystem:
             df = df.assign(ema_long=ema_long, ema_middle=ema_middle, macd=macd, signal=signal,
                            macdhist=macdhist, fast_k=fast_k, slow_d=slow_d).dropna()
 
-            return df
+            return df, macdhist_ave
 
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} get_MACD : {str(e)}", log_lv=3)
@@ -98,7 +99,7 @@ class ElderTradeSystem:
         try:
             if 'macdhist' in df.columns:
                 df_days_hist = df['macdhist']  # silce
-                df_days_hist_shift = df_days_hist.shift(1)  # 1だけずらす
+                df_days_hist_shift = df_days_hist.shift(sg.g_one_day_data_amount*3)  # 60だけずらす
                 delta_hist = df_days_hist - df_days_hist_shift  # どのくらい変化か
                 delta_hist.iloc[0] = 0
                 delta_hist_sec_dpc = (delta_hist / df_days_hist.abs()) * 100 # 変化率
@@ -116,7 +117,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} macd_sec_dpc : {str(e)}", log_lv=3)
 
 
-    def is_buy_sell_nomal(self, hist_inclination_avg, macdhist, slow_d, slow_d_buy, slow_d_sell):
+    def is_buy_sell_nomal(self, macdhist_ave, macdhist, slow_d, slow_d_buy, slow_d_sell):
         """
         株を買うか売るか見守るか選択
         :param macd_sec_dpc:
@@ -127,7 +128,7 @@ class ElderTradeSystem:
             if macdhist is None or slow_d is None:
                 self.__logger.write_log(f"is_buy_sell_nomal macdhist or slow_d is None", log_lv=3)
                 return None
-            if hist_inclination_avg < 0 and macdhist < -280.0 and slow_d <= slow_d_buy:
+            if -350 < macdhist_ave < 0 and macdhist < -320 and slow_d <= slow_d_buy:
                 # self.__logger.write_log(f"\t산다\tdate \t{print_info_list[1]}\t", log_lv=2)
                 # self.__logger.write_log(f"\t산다\tcode \t{print_info_list[0]}\t", log_lv=2)
                 # self.__logger.write_log(f"\t산다\tmacd_sec_dpc \t{macd_sec_dpc}\t", log_lv=2)
@@ -137,7 +138,7 @@ class ElderTradeSystem:
                 # self.__logger.write_log(f"\t산다\tmacd_sec_dpc \t{print_info_list[4]}\t", log_lv=2)
                 # self.__logger.write_log(f"------------------------------------", log_lv=2)
                 result = True
-            elif hist_inclination_avg > 0 and macdhist > 250.0 and slow_d >= slow_d_sell:
+            elif macdhist_ave > 0 and macdhist > 280 and slow_d >= slow_d_sell:
                 # self.__logger.write_log(f"\t판다\tdate \t{print_info_list[1]}\t", log_lv=2)
                 # self.__logger.write_log(f"\t판다\tcode \t{print_info_list[0]}\t", log_lv=2)
                 # self.__logger.write_log(f"\t판다\tmacd_sec_dpc \t{macd_sec_dpc}\t", log_lv=2)

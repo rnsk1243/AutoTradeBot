@@ -22,7 +22,8 @@ else:
     try:
         sg.init_global()
         # =======================================
-        path_xlsx = 'C:/stockauto/xlsx/'
+        path_xlsx = "C:\\stockauto\\xlsx\\"
+        path_xlsx_more = "C:\\stockauto\\xlsx\\more\\"
         xlsx_analysis_ascending_true = pd.DataFrame()
         xlsx_analysis_ascending_false = pd.DataFrame()
         benefit_total = 0
@@ -30,13 +31,13 @@ else:
         fees = 0.0014
         buy_persent = 90
         money = 10000000
-        test_target_stock_list = sg.g_json_trading_config['buy_list']
+        test_target_stock_list = sg.g_json_trading_config['test_list']
         test_stock_amount = len(test_target_stock_list)
         comp_count = 0
         benefit_OK = 0
         benefit_NO = 0
 
-        test_days = 12  # day
+        test_days = 18  # day
         analysis_data_amount = sg.g_one_day_data_amount * 5
         macd_long_day = 5  # day
         msd_rolling_day = 30  # // day
@@ -62,7 +63,8 @@ else:
             df_volume = []
             df_macdhist = []
             df_slow_d = []
-            df_hist_inclination_avg = []
+            # df_hist_inclination_avg = []
+            df_macdhist_ave = []
 
             kurikai = len(df) - analysis_data_amount
             if kurikai < 300:
@@ -76,31 +78,36 @@ else:
                 # print(f"data amount = {len(df_back_data)}")
 
                 macd_stoch_data = sg.g_ets.get_macd_stochastic(df_back_data, (sg.g_one_day_data_amount * macd_long_day))
-                macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data, sg.g_one_day_data_amount // msd_rolling_day)
-                macd_stoch_data = macd_stoch_data.iloc[-1]
-                df_code.append(macd_stoch_data['code'])
-                df_date.append(macd_stoch_data['date'])
-                df_week.append(macd_stoch_data['week'])
-                df_open.append(macd_stoch_data['open'])
-                df_high.append(macd_stoch_data['high'])
-                df_low.append(macd_stoch_data['low'])
-                df_close.append(macd_stoch_data['close'])
-                df_diff.append(macd_stoch_data['diff'])
-                df_volume.append(macd_stoch_data['volume'])
-                df_macdhist.append(macd_stoch_data['macdhist'])
-                df_slow_d.append(macd_stoch_data['slow_d'])
-                df_hist_inclination_avg.append(macd_stoch_data['hist_inclination_avg'])
+
+                macd_stoch_data_df = macd_stoch_data[0]
+                macdhist_ave = macd_stoch_data[1]
+
+                # macd_stoch_data_df = sg.g_ets.macd_sec_dpc(macd_stoch_data_df, 1)
+                macd_stoch_data_df = macd_stoch_data_df.iloc[-1]
+                df_code.append(macd_stoch_data_df['code'])
+                df_date.append(macd_stoch_data_df['date'])
+                df_week.append(macd_stoch_data_df['week'])
+                df_open.append(macd_stoch_data_df['open'])
+                df_high.append(macd_stoch_data_df['high'])
+                df_low.append(macd_stoch_data_df['low'])
+                df_close.append(macd_stoch_data_df['close'])
+                df_diff.append(macd_stoch_data_df['diff'])
+                df_volume.append(macd_stoch_data_df['volume'])
+                df_macdhist.append(macd_stoch_data_df['macdhist'])
+                df_slow_d.append(macd_stoch_data_df['slow_d'])
+                # df_hist_inclination_avg.append(macd_stoch_data_df['hist_inclination_avg'])
+                df_macdhist_ave.append(macdhist_ave)
 # ===================================================================
             test_data_df = pd.DataFrame(data={'code': df_code, 'date': df_date, 'week': df_week, 'open': df_open,
                                               'high': df_high, 'low': df_low, 'close': df_close, 'diff': df_diff,
                                               'volume': df_volume, 'macdhist': df_macdhist, 'slow_d': df_slow_d,
-                                              'hist_inclination_avg': df_hist_inclination_avg},
+                                              'macdhist_ave': df_macdhist_ave},
                                         columns=['code', 'date', 'week', 'open',
                                                  'high', 'low', 'close', 'diff',
-                                                 'volume', 'macdhist', 'slow_d', 'hist_inclination_avg'])
+                                                 'volume', 'macdhist', 'slow_d', 'macdhist_ave'])
 
-            # test_data_df.to_excel(f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}.xlsx",
-            #                       sheet_name=f'분석데이터')
+            test_data_df.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}.xlsx",
+                                  sheet_name=f'분석데이터')
             df_ascending_data = test_data_df.sort_values('close', ascending=True)
 
             xlsx_analysis_ascending_true = xlsx_analysis_ascending_true.append(df_ascending_data.iloc[0])

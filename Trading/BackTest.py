@@ -54,11 +54,12 @@ class BackTest(bt.Strategy):
             temp_df = self.__macd_stoch_data.loc[now_data]
 
             macdhist = temp_df['macdhist']
-            hist_inclination_avg = temp_df['hist_inclination_avg']
+            macdhist_ave = temp_df['macdhist_ave']
+            # hist_inclination_avg = temp_df['hist_inclination_avg']
             slow_d = temp_df['slow_d']
 
             # 買う；True　売る；False 何もしない；None
-            is_buy_sell = self.__ets.is_buy_sell_nomal(hist_inclination_avg=hist_inclination_avg,
+            is_buy_sell = self.__ets.is_buy_sell_nomal(macdhist_ave=macdhist_ave,
                                                        macdhist=macdhist,
                                                        slow_d=slow_d,
                                                        slow_d_buy=self.__slow_d_buy,

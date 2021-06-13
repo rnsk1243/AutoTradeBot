@@ -80,13 +80,21 @@ if __name__ == '__main__':
         kau_list = sg.g_json_trading_config['buy_list']
         db_get_data_amount_days = analysis_data_amount + 2  # 데이터베이스에서 데이터를 얼마나 가져올지 기간
 
+        t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
+        t_start = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        t_stock_end = datetime.now().replace(hour=15, minute=20, second=0, microsecond=0)
+
+        if t_start < datetime.now() < t_stock_end:
+            bought_list = sg.g_creon.get_bought_stock_list()
+            for bought_stock in bought_list:
+                stock_code = bought_stock['code']
+                sg.g_creon.request_day_chart_type(stock_code, 0)
+            sg.g_logger.write_log(f"오전9시 이후 실행 되었기 때문에 데이터를 다시 받았습니다.", log_lv=2, is_slacker=True)
+
         old_min = -1
         is_notice = False
         while True:
             t_now = datetime.now()
-            t_taiki = t_now.replace(hour=8, minute=0, second=0, microsecond=0)
-            t_start = t_now.replace(hour=9, minute=0, second=0, microsecond=0)
-            t_stock_end = t_now.replace(hour=15, minute=20, second=0, microsecond=0)
             cur_min = t_now.minute
             if t_taiki <= t_now < t_start:
                 time.sleep(1)
@@ -152,7 +160,7 @@ if __name__ == '__main__':
                                 sg.g_logger.write_log(f"이미 산 종목:{is_bought['name']}", log_lv=2)
                                 continue
 
-                            db_update_result = sg.g_creon.request_chart_type(stock_code, 400)
+                            db_update_result = sg.g_creon.request_day_chart_type(stock_code, 0)  # 당일 9시 이후 데이터를 받아옴
                             if db_update_result[0] > 0 and (db_update_result[1] >= cur_min or cur_min == 59):
                                 analysis_data_df = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=db_get_data_amount_days)
                                 if analysis_data_df is None:
