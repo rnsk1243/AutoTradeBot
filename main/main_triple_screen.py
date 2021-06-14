@@ -96,7 +96,10 @@ if __name__ == '__main__':
             bought_list = sg.g_creon.get_bought_stock_list()
             for bought_stock in bought_list:
                 stock_code = bought_stock['code']
-                sg.g_creon.request_day_chart_type(stock_code, 0)
+                result = sg.g_creon.request_day_chart_type(stock_code, 0)
+                if result is None:
+                    sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 구매한 주식으로 대처가 필요! :{stock_code}", log_lv=5, is_slacker=True)
+                    continue
             sg.g_logger.write_log(f"오전9시 이후 실행 되었기 때문에 데이터를 다시 받았습니다.", log_lv=2, is_slacker=True)
 
         old_min = -1
