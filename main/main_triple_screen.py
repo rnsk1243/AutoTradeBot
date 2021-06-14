@@ -48,8 +48,16 @@ if __name__ == '__main__':
             sg.g_logger.write_log(f"本日は土日または日曜なので株取引プログラムを終了します。", log_lv=2, is_slacker=True)
             sys.exit(0)
         # =======================================
-        if sg.g_creon_login.check_login_creon() is False:
-            sg.g_creon_login.LoginCreon()
+        is_login_success = False
+        while is_login_success is False:
+            try:
+                is_login_success = sg.g_creon_login.check_login_creon()
+                if is_login_success is False:
+                    sg.g_creon_login.LoginCreon()
+            except Exception as ex:
+                sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 5초뒤 재시도 합니다.: {str(ex)}", log_lv=5,
+                                      is_slacker=True)
+                time.sleep(5)
         sg.init_win32com_client()
         # =======================================
         tool.powersave()  # モニター電源オフ
@@ -108,6 +116,9 @@ if __name__ == '__main__':
                     for bought_stock in bought_list:
                         stock_code = bought_stock['code']
                         db_update_result = sg.g_creon.request_chart_type(stock_code, 20)
+                        if db_update_result is None:
+                            sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 :{stock_code}", log_lv=5, is_slacker=True)
+                            continue
                         if db_update_result[0] > 0 and (db_update_result[1] >= cur_min or cur_min == 59):
                             analysis_data_df = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=db_get_data_amount_days)
                             if analysis_data_df is None:
@@ -119,13 +130,16 @@ if __name__ == '__main__':
                             # ===========================
                             macd_stoch_data = sg.g_ets.get_macd_stochastic(analysis_data_df,
                                                                            (sg.g_one_day_data_amount * macd_long_day))
-                            macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data,
-                                                                    sg.g_one_day_data_amount // msd_rolling_day)
-                            macd_stoch_data = macd_stoch_data.iloc[-1]
+                            macd_stoch_data_df = macd_stoch_data[0]
+                            macdhist_ave = macd_stoch_data[1]
+                            # macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data,
+                            #                                         sg.g_one_day_data_amount // msd_rolling_day)
+                            macd_stoch_data_df = macd_stoch_data_df.iloc[-1]
                             # ===========================
 
-                            is_sell = sg.g_ets.is_buy_sell_nomal(macdhist=macd_stoch_data['macdhist'],
-                                                                 slow_d=macd_stoch_data['slow_d'],
+                            is_sell = sg.g_ets.is_buy_sell_nomal(macdhist_ave=macdhist_ave,
+                                                                 macdhist=macd_stoch_data_df['macdhist'],
+                                                                 slow_d=macd_stoch_data_df['slow_d'],
                                                                  slow_d_buy=slow_d_buy,
                                                                  slow_d_sell=slow_d_sell)
                             if is_sell is False:
@@ -161,6 +175,10 @@ if __name__ == '__main__':
                                 continue
 
                             db_update_result = sg.g_creon.request_day_chart_type(stock_code, 0)  # 당일 9시 이후 데이터를 받아옴
+                            if db_update_result is None:
+                                sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 :{stock_name}", log_lv=3)
+                                continue
+
                             if db_update_result[0] > 0 and (db_update_result[1] >= cur_min or cur_min == 59):
                                 analysis_data_df = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=db_get_data_amount_days)
                                 if analysis_data_df is None:
@@ -178,13 +196,16 @@ if __name__ == '__main__':
                                 # ===========================
                                 macd_stoch_data = sg.g_ets.get_macd_stochastic(analysis_data_df,
                                                                                (sg.g_one_day_data_amount * macd_long_day))
-                                macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data,
-                                                                        sg.g_one_day_data_amount // msd_rolling_day)
-                                macd_stoch_data = macd_stoch_data.iloc[-1]
+                                macd_stoch_data_df = macd_stoch_data[0]
+                                macdhist_ave = macd_stoch_data[1]
+                                # macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data,
+                                #                                         sg.g_one_day_data_amount // msd_rolling_day)
+                                macd_stoch_data_df = macd_stoch_data_df.iloc[-1]
                                 # ===========================
 
-                                is_buy = sg.g_ets.is_buy_sell_nomal(macdhist=macd_stoch_data['macdhist'],
-                                                                    slow_d=macd_stoch_data['slow_d'],
+                                is_buy = sg.g_ets.is_buy_sell_nomal(macdhist_ave=macdhist_ave,
+                                                                    macdhist=macd_stoch_data_df['macdhist'],
+                                                                    slow_d=macd_stoch_data_df['slow_d'],
                                                                     slow_d_buy=slow_d_buy,
                                                                     slow_d_sell=slow_d_sell)
                                 if is_buy is True:
@@ -234,9 +255,16 @@ else:
             sg.g_logger.write_log(f"本日は土日または日曜なので株取引プログラムを終了します。", log_lv=2, is_slacker=True)
             sys.exit(0)
         # =======================================
-        if sg.g_creon_login.check_login_creon() is False:
-            sg.g_creon_login.LoginCreon()
-        sg.init_win32com_client()
+        is_login_success = False
+        while is_login_success is False:
+            try:
+                is_login_success = sg.g_creon_login.check_login_creon()
+                if is_login_success is False:
+                    sg.g_creon_login.LoginCreon()
+            except Exception as ex:
+                sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 5초뒤 재시도 합니다.: {str(ex)}", log_lv=5,
+                                      is_slacker=True)
+                time.sleep(5)
         # =======================================
         # dfStockInfo = sg.g_creon.request_stock_info()
         # for row in dfStockInfo.itertuples():
@@ -271,8 +299,8 @@ else:
         is_notice = False
         while True:
             t_now = datetime.now()
-            t_taiki = t_now.replace(hour=7, minute=0, second=0, microsecond=0)
-            t_start = t_now.replace(hour=9, minute=0, second=0, microsecond=0)
+            t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
+            t_start = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
             t_stock_end = t_now.replace(hour=15, minute=20, second=0, microsecond=0)
             cur_min = t_now.minute
             if t_taiki <= t_now < t_start:
@@ -295,18 +323,22 @@ else:
                                 continue
                             sg.g_logger.write_log(f"{bought_stock['name']}-price {cur_min} = \r\n{analysis_data_df}", log_lv=2, is_con_print=False)
                             # 팔까 말까 계산 처리
-                            sg.g_logger.write_log(f"{stock_code}===============팔까 말까 계산 처리...Start", log_lv=2, is_con_print=False)
+                            sg.g_logger.write_log(f"{stock_code}===============팔까 말까 계산 처리...Start", log_lv=2)
 
                             # ===========================
                             macd_stoch_data = sg.g_ets.get_macd_stochastic(analysis_data_df,
                                                                            (sg.g_one_day_data_amount * macd_long_day))
-                            macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data,
-                                                                    sg.g_one_day_data_amount // msd_rolling_day)
-                            macd_stoch_data = macd_stoch_data.iloc[-1]
+                            macd_stoch_data_df = macd_stoch_data[0]
+                            macdhist_ave = macd_stoch_data[1]
+                            # macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data,
+                            #                                         sg.g_one_day_data_amount // msd_rolling_day)
+                            macd_stoch_data_df = macd_stoch_data_df.iloc[-1]
+                            sg.g_logger.write_log(f"{stock_code} / macdhist_ave = {macdhist_ave}", log_lv=2)
                             # ===========================
 
-                            is_sell = sg.g_ets.is_buy_sell_nomal(macdhist=macd_stoch_data['macdhist'],
-                                                                 slow_d=macd_stoch_data['slow_d'],
+                            is_sell = sg.g_ets.is_buy_sell_nomal(macdhist_ave=macdhist_ave,
+                                                                 macdhist=macd_stoch_data_df['macdhist'],
+                                                                 slow_d=macd_stoch_data_df['slow_d'],
                                                                  slow_d_buy=slow_d_buy,
                                                                  slow_d_sell=slow_d_sell)
                             if is_sell is False:
@@ -356,18 +388,21 @@ else:
                                     continue
                                 sg.g_logger.write_log(f"{stock_code}-price {cur_min} = \r\n{analysis_data_df}", log_lv=2, is_con_print=False)
                                 # 살까 말까 계산 처리
-                                sg.g_logger.write_log(f"===============살까 말까 계산 처리...Start", log_lv=2, is_con_print=False)
+                                sg.g_logger.write_log(f"===============살까 말까 계산 처리...Start", log_lv=2)
 
                                 # ===========================
                                 macd_stoch_data = sg.g_ets.get_macd_stochastic(analysis_data_df,
                                                                                (sg.g_one_day_data_amount * macd_long_day))
-                                macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data,
-                                                                        sg.g_one_day_data_amount // msd_rolling_day)
-                                macd_stoch_data = macd_stoch_data.iloc[-1]
+                                macd_stoch_data_df = macd_stoch_data[0]
+                                macdhist_ave = macd_stoch_data[1]
+                                # macd_stoch_data = sg.g_ets.macd_sec_dpc(macd_stoch_data,
+                                #                                         sg.g_one_day_data_amount // msd_rolling_day)
+                                macd_stoch_data_df = macd_stoch_data_df.iloc[-1]
                                 # ===========================
 
-                                is_buy = sg.g_ets.is_buy_sell_nomal(macdhist=macd_stoch_data['macdhist'],
-                                                                    slow_d=macd_stoch_data['slow_d'],
+                                is_buy = sg.g_ets.is_buy_sell_nomal(macdhist_ave=macdhist_ave,
+                                                                    macdhist=macd_stoch_data_df['macdhist'],
+                                                                    slow_d=macd_stoch_data_df['slow_d'],
                                                                     slow_d_buy=slow_d_buy,
                                                                     slow_d_sell=slow_d_sell)
                                 if is_buy is True:

@@ -1,5 +1,6 @@
 import sys
 sys.path.append('../')
+import time
 from pygit2 import Repository
 from datetime import datetime
 from InitGlobal import stock_global as sg
@@ -22,8 +23,16 @@ if __name__ == '__main__':
             sg.g_logger.write_log(f"本日は土日または日曜なので株取引プログラムを終了します。", log_lv=2, is_slacker=True)
             sys.exit(0)
         # =======================================
-        if sg.g_creon_login.check_login_creon() is False:
-            sg.g_creon_login.LoginCreon()
+        is_login_success = False
+        while is_login_success is False:
+            try:
+                is_login_success = sg.g_creon_login.check_login_creon()
+                if is_login_success is False:
+                    sg.g_creon_login.LoginCreon()
+            except Exception as ex:
+                sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 5초뒤 재시도 합니다.: {str(ex)}", log_lv=5,
+                                      is_slacker=True)
+                time.sleep(5)
         sg.init_win32com_client()
         # =======================================
         tool.powersave()  # モニター電源オフ
