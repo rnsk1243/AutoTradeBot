@@ -41,7 +41,10 @@ if __name__ == '__main__':
         sg.g_logger.write_log(f"종목 분데이터 수집 시작", log_lv=2, is_slacker=True)
         dfStockInfo = sg.g_creon.request_stock_info()
         for row in dfStockInfo.itertuples():
-            sg.g_creon.request_day_chart_type(row[1], 1)
+            result = sg.g_creon.request_day_chart_type(row[1], 1)
+            up_amount = result[0]
+            up_min = result[1]
+            sg.g_logger.write_log(f"【{row[0]}/{len(dfStockInfo)}】 {row[2]} / up_amount = {up_amount} / up_min = {up_min}", log_lv=2, is_slacker=False)
         sg.g_logger.write_log(f"종목 분데이터 수집 완료 = {len(dfStockInfo)}개", log_lv=2, is_slacker=True)
         # =======================================
         sys.exit(0)
