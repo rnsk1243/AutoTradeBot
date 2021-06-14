@@ -31,7 +31,7 @@ else:
         fees = 0.0014
         buy_persent = 90
         money = 10000000
-        test_target_stock_list = sg.g_json_trading_config['test_list']
+        test_target_stock_list = sg.g_json_trading_config['buy_list']
         test_stock_amount = len(test_target_stock_list)
         comp_count = 0
         benefit_OK = 0

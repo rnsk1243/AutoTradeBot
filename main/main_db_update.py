@@ -38,3 +38,24 @@ if __name__ == '__main__':
         sys.exit(0)
     except Exception as ex:
         sg.g_logger.write_log(f"Exception occured main_db_update __name__ python console: {str(ex)}", log_lv=5, is_slacker=True)
+else:
+    try:
+        # =======================================
+        sg.init_global()
+        # =======================================
+        # =======================================
+        # =======================================
+        if sg.g_creon_login.check_login_creon() is False:
+            sg.g_creon_login.LoginCreon()
+        sg.init_win32com_client()
+        # =======================================
+        # =======================================
+        test_target_stock_list = sg.g_json_trading_config['buy_list']
+        for row in test_target_stock_list:
+            stock_code = sg.g_market_db.get_stock_code(row)
+            sg.g_creon.request_day_chart_type(stock_code, 0)
+        sg.g_logger.write_log(f"종목 분데이터 수집 완료 = {len(test_target_stock_list)}개", log_lv=2, is_slacker=False)
+        # =======================================
+        sys.exit(0)
+    except Exception as ex:
+        sg.g_logger.write_log(f"Exception occured main_db_update __name__ python console: {str(ex)}", log_lv=5, is_slacker=True)
