@@ -332,6 +332,10 @@ class Creon:
         result_amount = 0
         resent_min = 0
         amount = 5 * ONE_DAY_MIN_AMOUNT
+        today = datetime.today().weekday()
+        if today == 0:  # 月曜日の場合、当日のみ取得する。
+            day_ago = 0
+
         ago_date = datetime.today() - timedelta(days=day_ago)
         ago_date_start = ago_date.replace(hour=9, minute=1, second=0, microsecond=0)
         # ago_date_start_str = ago_date_start.strftime("%Y-%m-%d %H:%M:%S")
