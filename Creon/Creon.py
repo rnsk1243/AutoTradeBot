@@ -330,6 +330,7 @@ class Creon:
         :return:
         """
         result_amount = 0
+        resent_min = 0
         amount = 5 * ONE_DAY_MIN_AMOUNT
         ago_date = datetime.today() - timedelta(days=day_ago)
         ago_date_start = ago_date.replace(hour=9, minute=1, second=0, microsecond=0)
@@ -392,11 +393,12 @@ class Creon:
             if is_not_end is True:
                 return None
             else:
+                resent_min = result.iloc[0].date.time().minute
                 # ------------DB INSERT--------------
                 result_amount = sg.g_db_updater.replace_into_db(code, result, chartType)
                 # ------------DB INSERT--------------
 
-        return result_amount
+        return result_amount, resent_min
 
     def request_stock_info(self):
         """

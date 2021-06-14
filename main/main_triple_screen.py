@@ -116,6 +116,9 @@ if __name__ == '__main__':
                     for bought_stock in bought_list:
                         stock_code = bought_stock['code']
                         db_update_result = sg.g_creon.request_chart_type(stock_code, 20)
+                        if db_update_result is None:
+                            sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 :{stock_code}", log_lv=5, is_slacker=True)
+                            continue
                         if db_update_result[0] > 0 and (db_update_result[1] >= cur_min or cur_min == 59):
                             analysis_data_df = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=db_get_data_amount_days)
                             if analysis_data_df is None:
@@ -172,6 +175,10 @@ if __name__ == '__main__':
                                 continue
 
                             db_update_result = sg.g_creon.request_day_chart_type(stock_code, 0)  # 당일 9시 이후 데이터를 받아옴
+                            if db_update_result is None:
+                                sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 :{stock_name}", log_lv=3)
+                                continue
+
                             if db_update_result[0] > 0 and (db_update_result[1] >= cur_min or cur_min == 59):
                                 analysis_data_df = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=db_get_data_amount_days)
                                 if analysis_data_df is None:
