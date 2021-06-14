@@ -42,6 +42,9 @@ if __name__ == '__main__':
         dfStockInfo = sg.g_creon.request_stock_info()
         for row in dfStockInfo.itertuples():
             result = sg.g_creon.request_day_chart_type(row[1], 1)
+            if result is None:
+                sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패, 받은 개수가 0개일지도:{row[2]}", log_lv=3)
+                continue
             up_amount = result[0]
             up_min = result[1]
             sg.g_logger.write_log(f"【{row[0]}/{len(dfStockInfo)}】 {row[2]} / up_amount = {up_amount} / up_min = {up_min}", log_lv=2, is_slacker=False)
