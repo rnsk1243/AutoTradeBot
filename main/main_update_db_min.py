@@ -38,7 +38,7 @@ if __name__ == '__main__':
         tool.powersave()  # モニター電源オフ
         # =======================================
 
-        sg.g_logger.write_log(f"종목 분데이터 수집 시작", log_lv=2, is_slacker=True)
+        sg.g_logger.write_log(f"분차트 종목 분데이터 수집 시작", log_lv=2, is_slacker=True)
         dfStockInfo = sg.g_creon.request_stock_info()
         for row in dfStockInfo.itertuples():
             result = sg.g_creon.request_day_chart_type(row[1], 1)
@@ -48,8 +48,38 @@ if __name__ == '__main__':
             up_amount = result[0]
             up_min = result[1]
             sg.g_logger.write_log(f"【{row[0]}/{len(dfStockInfo)}】 {row[2]} / up_amount = {up_amount} / up_min = {up_min}", log_lv=2, is_slacker=False)
-        sg.g_logger.write_log(f"종목 분데이터 수집 완료 = {len(dfStockInfo)}개", log_lv=2, is_slacker=True)
+        sg.g_logger.write_log(f"분(min)차트 종목 분데이터 수집 완료 = {len(dfStockInfo)}개", log_lv=2, is_slacker=True)
         # =======================================
         sys.exit(0)
+    except Exception as ex:
+        sg.g_logger.write_log(f"Exception occured main_db_update __name__ python console: {str(ex)}", log_lv=5, is_slacker=True)
+else:
+    try:
+        # =======================================
+        sg.init_global()
+        # =======================================
+        is_login_success = False
+        while is_login_success is False:
+            try:
+                is_login_success = sg.g_creon_login.check_login_creon()
+                if is_login_success is False:
+                    sg.g_creon_login.LoginCreon()
+            except Exception as ex:
+                sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 5초뒤 재시도 합니다.: {str(ex)}", log_lv=5,
+                                      is_slacker=True)
+                time.sleep(5)
+        sg.init_win32com_client()
+        # =======================================
+        dfStockInfo = sg.g_creon.request_stock_info()
+        for row in dfStockInfo.itertuples():
+            result = sg.g_creon.request_day_chart_type(row[1], 1)
+            if result is None:
+                sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패, 받은 개수가 0개일지도:{row[2]}", log_lv=3)
+                continue
+            up_amount = result[0]
+            up_min = result[1]
+            sg.g_logger.write_log(f"【{row[0]}/{len(dfStockInfo)}】 {row[2]} / up_amount = {up_amount} / up_min = {up_min}", log_lv=2, is_slacker=False)
+        sg.g_logger.write_log(f"분(min)차트 종목 분데이터 수집 완료 = {len(dfStockInfo)}개", log_lv=2, is_slacker=True)
+        # =======================================
     except Exception as ex:
         sg.g_logger.write_log(f"Exception occured main_db_update __name__ python console: {str(ex)}", log_lv=5, is_slacker=True)

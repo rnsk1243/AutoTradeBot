@@ -207,7 +207,7 @@ class Creon:
 
         return sg.g_cpOhlc
 
-    def request_chart_day(self, code, amount):
+    def request_chart_day(self, code, amount=MAX_REQUEST_NUM):
         """
         月、週データを取得
         :param code: 株コード
@@ -256,12 +256,12 @@ class Creon:
                                })
 
         result = self.__transform_data_frame_db(result, "D")
-
+        resent_day = result.iloc[0].date.day
         # ------------DB INSERT--------------
-        sg.g_db_updater.replace_into_db(code, result, "D")
+        result_amount = sg.g_db_updater.replace_into_db(code, result, "D")
         # ------------DB INSERT--------------
 
-        return None
+        return result_amount, resent_day
 
     def request_chart_type(self, code, amount, chartType='m'):
         """
