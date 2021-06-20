@@ -3,7 +3,23 @@
 		"update_stock_list": []
 	},
 	"section_daily_day_all": {
-		"update_stock_list": []
+		"update_stock_list": [
+			"A039230",
+			"A043590",
+			"A052190",
+			"A058420",
+			"A058530",
+			"A066110",
+			"A160600",
+			"A039230",
+			"A043590",
+			"A052190",
+			"A058420",
+			"A058530",
+			"A066110",
+			"A160600",
+			"A011690"
+		]
 	},
 	"section_M": {
 		"update_stock_list": []
@@ -12,6 +28,12 @@
 		"update_stock_list": []
 	},
 	"section_m": {
-		"update_stock_list": []
+		"update_stock_list": [
+			"A001529",
+			"A195440",
+			"A001529",
+			"A195440",
+			"A001529"
+		]
 	}
 }

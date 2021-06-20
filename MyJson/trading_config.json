@@ -1,10 +1,10 @@
 {
   "buy_stock_cash": 70,
-  "buy_auto_stock_count_short": 20,
-  "analysis_data_amount": 5,
-  "macd_long_day": 5,
-  "msd_rolling_day": 3,
-  "slow_d_buy": 10,
+  "buy_auto_stock_count_short": 5,
+  "analysis_data_amount_min": 12,
+  "analysis_data_amount_day": 90,
+  "day_rolling": 5,
+  "slow_d_buy": 30,
   "slow_d_sell": 85,
   "test_list": [
     "신풍제약",
@@ -46,6 +46,7 @@
     "한미약품"
   ],
   "buy_list": [
+    "유한양행",
     "삼성바이오로직스",
     "현대글로비스",
     "셀트리온",

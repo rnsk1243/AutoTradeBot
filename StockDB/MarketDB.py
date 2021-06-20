@@ -178,6 +178,9 @@ class MarketDB:
             return None
         return code
 
+    def get_stock_info_all(self):
+        return self.__codes
+
     def add_diff(self, df):
         """
         diffカラムを追加＆更新する。closeカラムが必要です。
