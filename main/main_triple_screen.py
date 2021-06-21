@@ -58,7 +58,6 @@ if __name__ == '__main__':
                 sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 5초뒤 재시도 합니다.: {str(ex)}", log_lv=5,
                                       is_slacker=True)
                 time.sleep(5)
-        sg.init_win32com_client()
         # =======================================
         tool.powersave()  # モニター電源オフ
         # =======================================
@@ -257,7 +256,6 @@ else:
                 sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 5초뒤 재시도 합니다.: {str(ex)}", log_lv=5,
                                       is_slacker=True)
                 time.sleep(5)
-        sg.init_win32com_client()
         # =======================================
         tool.powersave()  # モニター電源オフ
         # =======================================
@@ -350,8 +348,6 @@ else:
                         continue
 
                     if True:
-                        if "A000100" == stock_code:
-                            print("----")
                         analysis_data_df_min = sg.g_market_db.get_cur_stock_price(stock_code,
                                                                                   day_ago=analysis_data_amount_min)
                         analysis_data_df_day = sg.g_market_db.get_past_stock_price(stock_code,
@@ -370,7 +366,7 @@ else:
                                                   f"continue", log_lv=3)
                             continue
                         # 살까 말까 계산 처리
-                        sg.g_logger.write_log(f"===============살까 말까 계산 처리...Start", log_lv=2)
+                        sg.g_logger.write_log(f"===============살까 말까 계산 처리...Start..{stock_code}", log_lv=2)
                         # ===========================
                         macd_stoch_data_day = sg.g_ets.get_macd_stochastic(df=analysis_data_df_day,
                                                                            slow_d_rolling=day_rolling)
