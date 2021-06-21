@@ -18,7 +18,7 @@ class CreonLogin:
         creonにログインされているか確認
         :return: True:ログイン状態 False:非ログイン状態
         """
-        if (sg.g_cpStatus.IsConnect == 0):
+        if sg.g_cpStatus.IsConnect == 0:
             sg.g_logger.write_log('creonにログインされていないのでログインします。', log_lv=2)
             return False
         else:
@@ -43,6 +43,7 @@ class CreonLogin:
                 app = application.Application()
                 app.start(f"{creonInfo['path']} /prj:cp /id:{creonInfo['id']} /pwd:{creonInfo['pwd']} /pwdcert:{creonInfo['pwdcert']} /autostart")
                 time.sleep(60)
+                sg.init_win32com_client()
                 sg.g_logger.write_log('Creonログイン完了', log_lv=2, is_slacker=True)
 
         except FileNotFoundError as e:

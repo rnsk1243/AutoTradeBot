@@ -256,6 +256,8 @@ class MarketDB:
             code = self.get_stock_code(stock_name=code)
 
         df = pd.read_sql(sg.g_json_sql[sql_str].format(code, ago_date_start, ago_date_end), sg.g_conn)
+        if len(df) == 0:
+            return None
         df = self.add_up_down(df)
         check_result = self.check_stock_price(stock_name=code, chart_type=chart_type, df=df)
 
@@ -285,6 +287,8 @@ class MarketDB:
             code = self.get_stock_code(stock_name=code)
 
         df_recent = pd.read_sql(sg.g_json_sql["SELECT_012"].format(code), sg.g_conn)
+        if len(df_recent) == 0:
+            return None
         start_date = df_recent.date[0] - timedelta(days=day_ago)
 
         df = pd.read_sql(sg.g_json_sql["SELECT_013"].format(code, start_date), sg.g_conn)

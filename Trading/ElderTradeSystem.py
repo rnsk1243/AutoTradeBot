@@ -69,7 +69,7 @@ class ElderTradeSystem:
             macd = ema_middle - ema_long  # MACD線
             signal = macd.ewm(span=days_short).mean()  # シグナル
             macdhist = macd - signal # MACD ヒストグラム
-            macdhist_ave = macdhist.sum() // len(macdhist)
+            macdhist_ave = macdhist.tail(60).sum() // 60  # macdhist.sum() // len(macdhist)
 
             ndays_high = df.high.rolling(window=len(df), min_periods=1).max()  # 7日最大値
             ndays_low = df.low.rolling(window=len(df), min_periods=1).min()  # 7日最小値
@@ -136,9 +136,9 @@ class ElderTradeSystem:
             macdhist_m = df_macd_min['macdhist']
             slow_d_m = df_macd_min['slow_d']
 
-            if ave_min < 0 and macdhist_m < 0 and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
+            if macdhist_m < 0 < ave_min and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
                 result = True
-            elif ave_min > 0 and macdhist_m > 0 and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
+            elif ave_min < 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
                 result = False
             else:
                 result = None
@@ -182,9 +182,9 @@ class ElderTradeSystem:
             # else:
             #     result = None
 
-            if macdhist_ave_m < 0 and macdhist_m < 0 and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
+            if macdhist_m < 0 < macdhist_ave_m and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
                 result = True
-            elif macdhist_ave_m > 0 and macdhist_m > 0 and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
+            elif macdhist_ave_m < 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
                 result = False
             else:
                 result = None

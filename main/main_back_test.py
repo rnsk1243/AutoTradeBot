@@ -23,7 +23,7 @@ benefit_OK = 0
 benefit_NO = 0
 
 test_days = 30  # day
-test_days_day = (test_days * 3) * 2
+test_days_day = (test_days * 4)
 analysis_data_amount_day = test_days_day // 2
 analysis_data_amount_min = (sg.g_one_day_data_amount * test_days) // 3
 
