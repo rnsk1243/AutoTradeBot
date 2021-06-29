@@ -100,10 +100,18 @@ class Creon:
         self.__check_and_wait(LT_NONTRADE_REQUEST)  # 要請可能か？チェック
         self.init_cpBalance()
         if sg.g_day_start_money == 0:
-            sg.g_day_start_money = sg.g_cpBalance.GetHeaderValue(3)  # 14200199
+            sg.g_day_start_money = self.get_current_cash() # sg.g_cpBalance.GetHeaderValue(3)  # 14200199
 
         current_benefit = sg.g_cpBalance.GetHeaderValue(3)
         bought_stock_count = sg.g_cpBalance.GetHeaderValue(7)
+
+        if bought_stock_count == 0:
+            sg.g_logger.write_log(f"評価金額: {(current_benefit):,.0f}", log_lv=2, is_slacker=is_slacker,
+                                  is_con_print=False)
+            sg.g_logger.write_log(f"株種類数: {str(bought_stock_count)}", log_lv=2, is_slacker=is_slacker,
+                                  is_con_print=False)
+            return
+
         today_benefit = current_benefit - sg.g_day_start_money
         today_benefit_per = round((today_benefit / sg.g_day_start_money) * 100, 2)
         # sg.g_logger.write_log("↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓", log_lv=2, is_slacker=True, is_con_print=False)
@@ -115,7 +123,7 @@ class Creon:
         sg.g_logger.write_log(f"本日の利益率: {(today_benefit):,.0f} / 【{today_benefit_per}%】", log_lv=2, is_slacker=is_slacker, is_con_print=False)
         # sg.g_logger.write_log("↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑", log_lv=2, is_slacker=True, is_con_print=False)
 
-        return current_benefit, bought_stock_count
+        return
 
     def __transform_data_frame_db(self, df, chartType):
         """

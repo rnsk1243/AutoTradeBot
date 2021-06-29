@@ -22,15 +22,19 @@ comp_count = 0
 benefit_OK = 0
 benefit_NO = 0
 
-test_days = 30  # day
-test_days_day = (test_days * 4)
-analysis_data_amount_day = test_days_day // 2
-analysis_data_amount_min = (sg.g_one_day_data_amount * test_days) // 3
+analysis_data_amount_min = sg.g_json_trading_config['analysis_data_amount_min']
+analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
+day_rolling = sg.g_json_trading_config['day_rolling']
+kau_list = sg.g_json_trading_config['buy_list']
 
-slow_d_buy = 30
+test_days = 30  # day
+test_days_day = 180
+analysis_data_amount_day = (analysis_data_amount_day * 3) // 5
+
+slow_d_buy = 20
 slow_d_sell = 85
 is_graph = False
-is_graph_code = 'A005930'
+is_graph_code = '씨젠'
 
 def make_test_data(df, chart):
 
@@ -56,8 +60,8 @@ def make_test_data(df, chart):
     df_macdhist_ave = []
 
     if chart == 0:
-        kurikai = len(df) - analysis_data_amount_min
-        analysis_data_amount = analysis_data_amount_min
+        kurikai = len(df) - ((analysis_data_amount_min * 3) // 5) * sg.g_one_day_data_amount
+        analysis_data_amount = ((analysis_data_amount_min * 3) // 5) * sg.g_one_day_data_amount
         slow_d_rolling = sg.g_one_day_data_amount
         if kurikai < 300:
             sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
@@ -71,43 +75,46 @@ def make_test_data(df, chart):
             return None
     else:
         return None
+    try:
+        # ===================================================================
+        for i in range(1, kurikai):
+            end_i = int(analysis_data_amount + i)
+            df_back_data = df[i:end_i]
+            # print(f"data amount = {len(df_back_data)}")
+            macd_stoch_data = sg.g_ets.get_macd_stochastic(df_back_data, slow_d_rolling)
 
-    # ===================================================================
-    for i in range(1, kurikai):
-        end_i = int(analysis_data_amount + i)
-        df_back_data = df[i:end_i]
-        # print(f"data amount = {len(df_back_data)}")
+            macd_stoch_data_df = macd_stoch_data[0]
+            macdhist_ave = macd_stoch_data[1]
+            if len(macd_stoch_data_df) == 0:
+                return None
+            # macd_stoch_data_df = sg.g_ets.macd_sec_dpc(macd_stoch_data_df, 1)
+            macd_stoch_data_df = macd_stoch_data_df.iloc[-1]
+            df_code.append(macd_stoch_data_df['code'])
+            df_date.append(macd_stoch_data_df['date'])
+            df_week.append(macd_stoch_data_df['week'])
+            df_open.append(macd_stoch_data_df['open'])
+            df_high.append(macd_stoch_data_df['high'])
+            df_low.append(macd_stoch_data_df['low'])
+            df_close.append(macd_stoch_data_df['close'])
+            df_diff.append(macd_stoch_data_df['diff'])
+            df_volume.append(macd_stoch_data_df['volume'])
+            df_macdhist.append(macd_stoch_data_df['macdhist'])
+            df_slow_d.append(macd_stoch_data_df['slow_d'])
+            # df_hist_inclination_avg.append(macd_stoch_data_df['hist_inclination_avg'])
+            df_macdhist_ave.append(macdhist_ave)
+        # ===================================================================
+        test_data_df = pd.DataFrame(data={'code': df_code, 'date': df_date, 'week': df_week, 'open': df_open,
+                                          'high': df_high, 'low': df_low, 'close': df_close, 'diff': df_diff,
+                                          'volume': df_volume, 'macdhist': df_macdhist, 'slow_d': df_slow_d,
+                                          'macdhist_ave': df_macdhist_ave},
+                                    columns=['code', 'date', 'week', 'open',
+                                             'high', 'low', 'close', 'diff',
+                                             'volume', 'macdhist', 'slow_d', 'macdhist_ave'])
 
-        macd_stoch_data = sg.g_ets.get_macd_stochastic(df_back_data, slow_d_rolling)
+        return test_data_df
 
-        macd_stoch_data_df = macd_stoch_data[0]
-        macdhist_ave = macd_stoch_data[1]
-
-        # macd_stoch_data_df = sg.g_ets.macd_sec_dpc(macd_stoch_data_df, 1)
-        macd_stoch_data_df = macd_stoch_data_df.iloc[-1]
-        df_code.append(macd_stoch_data_df['code'])
-        df_date.append(macd_stoch_data_df['date'])
-        df_week.append(macd_stoch_data_df['week'])
-        df_open.append(macd_stoch_data_df['open'])
-        df_high.append(macd_stoch_data_df['high'])
-        df_low.append(macd_stoch_data_df['low'])
-        df_close.append(macd_stoch_data_df['close'])
-        df_diff.append(macd_stoch_data_df['diff'])
-        df_volume.append(macd_stoch_data_df['volume'])
-        df_macdhist.append(macd_stoch_data_df['macdhist'])
-        df_slow_d.append(macd_stoch_data_df['slow_d'])
-        # df_hist_inclination_avg.append(macd_stoch_data_df['hist_inclination_avg'])
-        df_macdhist_ave.append(macdhist_ave)
-    # ===================================================================
-    test_data_df = pd.DataFrame(data={'code': df_code, 'date': df_date, 'week': df_week, 'open': df_open,
-                                      'high': df_high, 'low': df_low, 'close': df_close, 'diff': df_diff,
-                                      'volume': df_volume, 'macdhist': df_macdhist, 'slow_d': df_slow_d,
-                                      'macdhist_ave': df_macdhist_ave},
-                                columns=['code', 'date', 'week', 'open',
-                                         'high', 'low', 'close', 'diff',
-                                         'volume', 'macdhist', 'slow_d', 'macdhist_ave'])
-
-    return test_data_df
+    except Exception as ex:
+        print(f"{ex}")
 
 if __name__ == '__main__':
     try:
@@ -131,11 +138,11 @@ else:
             df_min = sg.g_market_db.get_past_stock_price(stock_code, test_days)
             df_day = sg.g_market_db.get_past_stock_price(stock_code, test_days_day, chart_type="D")
 
-            df_data_min = make_test_data(df_min, 0)
-            if df_data_min is None:
-                continue
             df_data_day = make_test_data(df_day, 1)
             if df_data_day is None:
+                continue
+            df_data_min = make_test_data(df_min, 0)
+            if df_data_min is None:
                 continue
 
             df_data_min.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_m.xlsx",
