@@ -11,12 +11,12 @@ if __name__ == '__main__':
         # =======================================
         sg.init_global()
         # =======================================
-        branch_name = Repository('.').head.shorthand
-        if branch_name != "master":
-            sg.g_logger.write_log(f"gitブランチがマスターではないため、実行できません。ブランチ名：{branch_name}", log_lv=2, is_slacker=True)
-            sys.exit(0)
-        else:
-            sg.g_logger.write_log(f"実行ブランチ名：{branch_name}", log_lv=2, is_slacker=True)
+        # branch_name = Repository('.').head.shorthand
+        # if branch_name != "master":
+        #     sg.g_logger.write_log(f"gitブランチがマスターではないため、実行できません。ブランチ名：{branch_name}", log_lv=2, is_slacker=True)
+        #     sys.exit(0)
+        # else:
+        #     sg.g_logger.write_log(f"実行ブランチ名：{branch_name}", log_lv=2, is_slacker=True)
         # =======================================
         today = datetime.today().weekday()
         if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
@@ -24,15 +24,15 @@ if __name__ == '__main__':
             sys.exit(0)
         # =======================================
         is_login_success = False
-        while is_login_success is False:
-            try:
-                is_login_success = sg.g_creon_login.check_login_creon()
-                if is_login_success is False:
-                    sg.g_creon_login.LoginCreon()
-            except Exception as ex:
-                sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 5초뒤 재시도 합니다.: {str(ex)}", log_lv=5,
-                                      is_slacker=True)
-                time.sleep(5)
+        try:
+            is_login_success = sg.g_creon_login.check_login_creon()
+            if is_login_success is False:
+                sg.g_creon_login.LoginCreon()
+        except Exception as ex:
+            sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패.: {str(ex)}",
+                                  log_lv=5,
+                                  is_slacker=True)
+            sys.exit(0)
         sg.init_win32com_client()
         # =======================================
         tool.powersave()  # モニター電源オフ
@@ -62,15 +62,15 @@ else:
         sg.init_global()
         # =======================================
         is_login_success = False
-        while is_login_success is False:
-            try:
-                is_login_success = sg.g_creon_login.check_login_creon()
-                if is_login_success is False:
-                    sg.g_creon_login.LoginCreon()
-            except Exception as ex:
-                sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 5초뒤 재시도 합니다.: {str(ex)}", log_lv=5,
-                                      is_slacker=True)
-                time.sleep(5)
+        try:
+            is_login_success = sg.g_creon_login.check_login_creon()
+            if is_login_success is False:
+                sg.g_creon_login.LoginCreon()
+        except Exception as ex:
+            sg.g_logger.write_log(f"Exception occured triple screen g_creon_login 크레온 로그인 실패 프로그램 종료.: {str(ex)}",
+                                  log_lv=5,
+                                  is_slacker=True)
+            sys.exit(0)
         sg.init_win32com_client()
         # =======================================
 

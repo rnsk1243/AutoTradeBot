@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from mplfinance.original_flavor import candlestick_ohlc
 import matplotlib.dates as mdates
+import math
 from InitGlobal import stock_global as sg
 
 class ElderTradeSystem:
@@ -61,6 +62,14 @@ class ElderTradeSystem:
         :return: df
         """
         try:
+            if df is None:
+                return df, None
+
+            if df.date.iloc[0].hour == 0:
+                isChartDay = True
+            else:
+                isChartDay = False
+
             days_middle = round(len(df)*0.46) # 130日:60日:45日の比率で63:(63*0.46):(63*0.35)に決め
             days_short = round(len(df)*0.35)
 
@@ -69,7 +78,19 @@ class ElderTradeSystem:
             macd = ema_middle - ema_long  # MACD線
             signal = macd.ewm(span=days_short).mean()  # シグナル
             macdhist = macd - signal # MACD ヒストグラム
-            macdhist_ave = macdhist.tail(60).sum() // 60  # macdhist.sum() // len(macdhist)
+            if isChartDay is True:
+                macdhist_diff_cumsum = macdhist.tail(3).diff().mean()
+            else:
+                macdhist_diff_cumsum = macdhist.tail(10).diff().mean()
+
+            if macdhist_diff_cumsum is None or math.isnan(macdhist_diff_cumsum) is True:
+                macdhist_ave = 0
+            else:
+                macdhist_ave = macdhist_diff_cumsum
+                # if len(macdhist_diff_cumsum) > 0:
+                #     macdhist_ave = macdhist_diff_cumsum.tail(1).values[0]
+                # else:
+                #     macdhist_ave = 0
 
             ndays_high = df.high.rolling(window=len(df), min_periods=1).max()  # 7日最大値
             ndays_low = df.low.rolling(window=len(df), min_periods=1).min()  # 7日最小値
@@ -87,6 +108,7 @@ class ElderTradeSystem:
 
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} get_MACD : {str(e)}", log_lv=3)
+            return None, None
 
 
     def macd_sec_dpc(self, df, rolling_day):
@@ -116,7 +138,7 @@ class ElderTradeSystem:
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} macd_sec_dpc : {str(e)}", log_lv=3)
 
-    def is_buy_sell(self, slow_d_day, df_macd_min, ave_min):
+    def is_buy_sell(self, df_day, macdhist_ave_day, df_min, macdhist_ave_m):
         """
         株を買うか売るか見守るか選択
         :param slow_d_buy:
@@ -126,19 +148,24 @@ class ElderTradeSystem:
         :return: タプル(True=買う,False=売る,None=見守る／点数=高いほど買う)
         """
         try:
-            slow_d_buy = sg.g_json_trading_config['slow_d_buy']
-            slow_d_sell = sg.g_json_trading_config['slow_d_sell']
-
-            if slow_d_day is None or df_macd_min is None or ave_min is None:
+            if df_day is None or df_min is None:
                 self.__logger.write_log(f"is_buy_sell_nomal // df_day or df_min is None", log_lv=3)
                 return None
 
-            macdhist_m = df_macd_min['macdhist']
-            slow_d_m = df_macd_min['slow_d']
+            slow_d_buy = sg.g_json_trading_config['slow_d_buy']
+            slow_d_sell = sg.g_json_trading_config['slow_d_sell']
 
-            if macdhist_m < 0 < ave_min and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
+            macdhist_day = df_day['macdhist']
+            # macdhist_ave_day = df_day['macdhist_ave']
+            slow_d_day = df_day['slow_d']
+
+            macdhist_m = df_min['macdhist']
+            # macdhist_ave_m = df_min['macdhist_ave']
+            slow_d_m = df_min['slow_d']
+
+            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
                 result = True
-            elif ave_min < 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
+            elif 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
                 result = False
             else:
                 result = None
@@ -182,9 +209,9 @@ class ElderTradeSystem:
             # else:
             #     result = None
 
-            if macdhist_m < 0 < macdhist_ave_m and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
+            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
                 result = True
-            elif macdhist_ave_m < 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
+            elif 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
                 result = False
             else:
                 result = None
