@@ -449,6 +449,12 @@ else:
                                                                                    slow_d_rolling=day_rolling)
                                 macd_stoch_data_df_day = macd_stoch_data_day[0]
                                 macdhist_ave_day = macd_stoch_data_day[1]
+
+                                path_xlsx = "C:\\stockauto\\xlsx\\real\\"
+                                macd_stoch_data_df_day.to_excel(f"{path_xlsx}_{stock_name}_{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_day.xlsx",
+                                              sheet_name=f'분석데이터d')
+                                sg.g_logger.write_log(f"{stock_code}\tmacdhist_ave_day\t{macdhist_ave_day}", log_lv=2)
+
                                 if len(macd_stoch_data_df_day) == 0:
                                     sg.g_logger.write_log(f"{stock_code} / macd_stoch_data_df_day get_macd_stochastic의 리턴값이 len = 0"
                                                           f" \r\n 거래 정지 되었던 주식일지도?", log_lv=3,
@@ -460,6 +466,11 @@ else:
                                                                                    slow_d_rolling=sg.g_one_day_data_amount)
                                 macd_stoch_data_df_min = macd_stoch_data_min[0]
                                 macdhist_ave_m = macd_stoch_data_min[1]
+                                macd_stoch_data_df_min.to_excel(
+                                    f"{path_xlsx}_{stock_name}_{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_min.xlsx",
+                                    sheet_name=f'분석데이터m')
+                                sg.g_logger.write_log(f"{stock_code}\tmacdhist_ave_m\t{macdhist_ave_m}", log_lv=2)
+
                                 if len(macd_stoch_data_df_min) == 0:
                                     sg.g_logger.write_log(f"{stock_code} / macd_stoch_data_df_min get_macd_stochastic의 리턴값이 len = 0"
                                                           f" \r\n 거래 정지 되었던 주식일지도?", log_lv=3,
