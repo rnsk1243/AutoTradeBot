@@ -271,7 +271,6 @@ if __name__ == '__main__':
 
     except Exception as ex:
         sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {str(ex)}", log_lv=5, is_slacker=True)
-
 else:
     try:
         #  7일간의 데이터 개수가 일정개수 이상인 주식만 자동매매 대상으로 할 것
