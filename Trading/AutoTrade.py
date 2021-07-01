@@ -89,8 +89,8 @@ def get_stock_balance(code):
     init_cpBalance()
     if code == 'ALL':
         current_benefit = sg.g_cpBalance.GetHeaderValue(3)
-        today_benefit = current_benefit - sg.g_day_start_money
-        today_benefit_per = round((today_benefit / sg.g_day_start_money) * 100, 2)
+        today_benefit = current_benefit - sg.g_day_start_pure_money
+        today_benefit_per = round((today_benefit / sg.g_day_start_pure_money) * 100, 2)
         sm.post_message("↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓")
         sg.g_logger.write_log(f"口座名: {str(sg.g_cpBalance.GetHeaderValue(0))}", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"決済残高収量: {str(sg.g_cpBalance.GetHeaderValue(1))}", log_lv=2, is_slacker=True)
@@ -302,7 +302,7 @@ def update_money():
         # sg.g_bought_short_list = ['A005930', 'A001360']     # 매수 완료된 종목 리스트
         # ================================================================
         init_cpBalance()  # init해야 새로운값을 받아올 수 있음
-        sg.g_day_start_money = sg.g_cpBalance.GetHeaderValue(3)
+        sg.g_day_start_pure_money = sg.g_cpBalance.GetHeaderValue(3)
         sg.g_logger.write_log(f"check_creon_system() : {check_creon_system()}", log_lv=2, is_slacker=False)  # 크레온 접속 점검
         get_stock_balance('ALL')      # 보유한 모든 종목 조회
 

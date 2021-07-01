@@ -61,34 +61,43 @@ if __name__ == '__main__':
         # =======================================
         tool.powersave()  # モニター電源オフ
         # =======================================
-        sg.g_day_start_money = sg.g_creon.get_current_cash()
-        total_cash = int(sg.g_day_start_money)
+        sg.g_creon.init_cpBalance()  # 내 주식 정보 초기화
+
+        sg.g_day_start_assets_money = sg.g_cpBalance.GetHeaderValue(3) # 주식을 포함한 총 자산 금액 초기화(아침 시작기준)
+        sg.g_day_start_pure_money = sg.g_creon.get_current_cash()  # 주식금액을 제외한 순수 현금자산 금액 초기화(아침 시작기준)
+        total_cash = int(sg.g_day_start_pure_money)
         buy_stock_cash_p = sg.g_json_trading_config['buy_stock_cash'] / 100
-        total_property = sg.g_cpBalance.GetHeaderValue(3)
-        cur_bought_count = sg.g_cpBalance.GetHeaderValue(7)
+
+        cur_bought_count = sg.g_cpBalance.GetHeaderValue(7)  # 구매한 종목 수
         sg.g_creon.notice_current_status(is_slacker=True)
 
-        if cur_bought_count != 0:
-            can_use_cash = total_property * buy_stock_cash_p
-            total_stock_cash = total_property - total_cash
+        if cur_bought_count > 0:
+            can_use_cash = sg.g_day_start_assets_money * buy_stock_cash_p
+            total_stock_cash = sg.g_day_start_assets_money - total_cash
             cur_can_use_cash = can_use_cash - total_stock_cash
-            max_buy_stock_count = sg.g_buy_auto_stock_count_short
-        else:
+        elif cur_bought_count == 0:
             can_use_cash = total_cash * buy_stock_cash_p
             total_stock_cash = 0
             cur_can_use_cash = can_use_cash - total_stock_cash
-            max_buy_stock_count = sg.g_buy_auto_stock_count_short
+        else:
+            sg.g_logger.write_log(f"Exception occured triple screen 구매한 종목 개수 이상발생->개수:{cur_bought_count}",
+                                  log_lv=5,
+                                  is_slacker=True)
+            sys.exit(0)
 
-        if max_buy_stock_count == 0:
-            max_buy_stock_count = 1
-            sg.g_logger.write_log(f"살수 있는 종목 수 초기화 실패", log_lv=5, is_slacker=True)
-        atari_cash = can_use_cash // max_buy_stock_count
+        if sg.g_buy_auto_stock_count_short == 0:
+            sg.g_logger.write_log(f"구매 하려는 종목 개수 초기치가 0이므로 매도만 진행합니다.:{sg.g_buy_auto_stock_count_short}",
+                                  log_lv=3,
+                                  is_slacker=True)
+            atari_cash = 0
+        else:
+            atari_cash = can_use_cash // sg.g_buy_auto_stock_count_short
 
         sg.g_logger.write_log(f"투자 비율 = {buy_stock_cash_p*100}%", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"투자 비율에 따른 전체 투자금 = {(can_use_cash):,.0f}", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"현재 사용할 수 있는 돈 = {(cur_can_use_cash):,.0f}", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"종목당 구매 할 돈 = {(atari_cash):,.0f}", log_lv=2, is_slacker=True)
-        sg.g_logger.write_log(f"현재 구매완료종목수/전체 = {cur_bought_count}/{max_buy_stock_count}", log_lv=2, is_slacker=True)
+        sg.g_logger.write_log(f"현재 구매완료종목수/전체 = {cur_bought_count}/{sg.g_buy_auto_stock_count_short}", log_lv=2, is_slacker=True)
 
         analysis_data_amount_min = sg.g_json_trading_config['analysis_data_amount_min']
         analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
@@ -125,11 +134,12 @@ if __name__ == '__main__':
 
                     for bought_stock in bought_list:
                         stock_code = bought_stock['code']
-                        db_update_result = sg.g_creon.request_chart_type(stock_code, 20)
+                        cur_min = datetime.now().minute
+                        db_update_result = sg.g_creon.request_chart_type(stock_code, 60)
                         if db_update_result is None:
                             sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 :{stock_code}", log_lv=5, is_slacker=True)
                             continue
-                        if db_update_result[0] > 0 and (db_update_result[1] >= cur_min or cur_min == 59):
+                        if db_update_result[0] > 0 and (db_update_result[1]+1 >= cur_min or cur_min == 59):
                             analysis_data_df_min = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=analysis_data_amount_min)
                             analysis_data_df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day, chart_type="D")
                             if analysis_data_df_min is None or analysis_data_df_day is None:
@@ -170,7 +180,7 @@ if __name__ == '__main__':
                                     sg.g_logger.write_log(f"매도 했습니다.\r\n"
                                                           f"stock_code = {stock_code}\r\n"
                                                           f"1주 가격 = {current_price}\r\n"
-                                                          f"이제 {max_buy_stock_count-bought_count}개 살 수 있습니다.", log_lv=2, is_slacker=True)
+                                                          f"이제 {sg.g_buy_auto_stock_count_short-bought_count}개 살 수 있습니다.", log_lv=2, is_slacker=True)
 
                             sg.g_logger.write_log(f"{stock_code}===============팔까 말까 계산 처리...E N D", log_lv=2)
                         else:
@@ -180,7 +190,7 @@ if __name__ == '__main__':
                                                   f"db_update_result[1] = {db_update_result[1]}\r\n"
                                                   f"cur_min = {cur_min}", log_lv=3,  is_slacker=True)
 
-                    if bought_count < max_buy_stock_count:
+                    if bought_count < sg.g_buy_auto_stock_count_short:
                         for stock_name in kau_list:
                             stock_code = sg.g_market_db.get_stock_code(stock_name)
                             if stock_code is None:
@@ -192,12 +202,13 @@ if __name__ == '__main__':
                                 sg.g_logger.write_log(f"이미 산 종목:{is_bought['name']}", log_lv=2)
                                 continue
 
+                            cur_min = datetime.now().minute
                             db_update_result = sg.g_creon.request_day_chart_type(stock_code, 0)  # 당일 9시 이후 데이터를 받아옴
                             if db_update_result is None:
                                 sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 :{stock_name}", log_lv=3)
                                 continue
 
-                            if db_update_result[0] > 0 and (db_update_result[1] >= cur_min or cur_min == 59):
+                            if db_update_result[0] > 0 and (db_update_result[1]+1 >= cur_min or cur_min == 59):
                                 analysis_data_df_min = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=analysis_data_amount_min)
                                 analysis_data_df_day = sg.g_market_db.get_past_stock_price(stock_code,
                                                                                            analysis_data_amount_day,
@@ -249,11 +260,17 @@ if __name__ == '__main__':
                                 sg.g_logger.write_log(f"===============살까 말까 계산 처리...E N D", log_lv=2)
                             else:
                                 sg.g_logger.write_log(f"Creon 으로 데이터를 받지 못 했습니다. DB 업뎃 실패\r\n"
-                                                      f"stock_name = {stock_name}"
-                                                      f"db_update_result[0] = {db_update_result[0]}"
-                                                      f"db_update_result[1] = {db_update_result[1]}"
+                                                      f"stock_name = {stock_name}\r\n"
+                                                      f"db_update_result[0] = {db_update_result[0]}\r\n"
+                                                      f"db_update_result[1] = {db_update_result[1]}\r\n"
                                                       f"cur_min = {cur_min}", log_lv=3, is_slacker=False)
 
+                    # 2시간마다 알림
+                    if (t_now.hour % 2) == 0 and is_notice is False:
+                        sg.g_creon.notice_current_status(is_slacker=True)
+                        is_notice = True
+                    elif (t_now.hour % 2) > 0:
+                        is_notice = False
                     # if (cur_min % 30) <= 5 and is_notice is False:
                     #     sg.g_creon.notice_current_status(is_slacker=True)
                     #     is_notice = True
@@ -289,35 +306,44 @@ else:
         # =======================================
         tool.powersave()  # モニター電源オフ
         # =======================================
-        sg.g_day_start_money = sg.g_creon.get_current_cash()
-        total_cash = int(sg.g_day_start_money)
+        sg.g_creon.init_cpBalance()  # 내 주식 정보 초기화
+
+        sg.g_day_start_assets_money = sg.g_cpBalance.GetHeaderValue(3) # 주식을 포함한 총 자산 금액 초기화(아침 시작기준)
+        sg.g_day_start_pure_money = sg.g_creon.get_current_cash()  # 주식금액을 제외한 순수 현금자산 금액 초기화(아침 시작기준)
+        total_cash = int(sg.g_day_start_pure_money)
         buy_stock_cash_p = sg.g_json_trading_config['buy_stock_cash'] / 100
-        total_property = sg.g_cpBalance.GetHeaderValue(3)
-        cur_bought_count = sg.g_cpBalance.GetHeaderValue(7)
+
+        cur_bought_count = sg.g_cpBalance.GetHeaderValue(7)  # 구매한 종목 수
         sg.g_creon.notice_current_status(is_slacker=True)
 
-        if cur_bought_count != 0:
-            can_use_cash = total_property * buy_stock_cash_p
-            total_stock_cash = total_property - total_cash
+        if cur_bought_count > 0:
+            can_use_cash = sg.g_day_start_assets_money * buy_stock_cash_p
+            total_stock_cash = sg.g_day_start_assets_money - total_cash
             cur_can_use_cash = can_use_cash - total_stock_cash
-            max_buy_stock_count = sg.g_buy_auto_stock_count_short
-        else:
+        elif cur_bought_count == 0:
             can_use_cash = total_cash * buy_stock_cash_p
             total_stock_cash = 0
             cur_can_use_cash = can_use_cash - total_stock_cash
-            max_buy_stock_count = sg.g_buy_auto_stock_count_short
+        else:
+            sg.g_logger.write_log(f"Exception occured triple screen 구매한 종목 개수 이상발생->개수:{cur_bought_count}",
+                                  log_lv=5,
+                                  is_slacker=True)
+            sys.exit(0)
 
 
-        if max_buy_stock_count == 0:
-            max_buy_stock_count = 1
-            sg.g_logger.write_log(f"살수 있는 종목 수 초기화 실패", log_lv=5, is_slacker=True)
-        atari_cash = can_use_cash // max_buy_stock_count
+        if sg.g_buy_auto_stock_count_short == 0:
+            sg.g_logger.write_log(f"구매 하려는 종목 개수 초기치가 0이므로 매도만 진행합니다.:{sg.g_buy_auto_stock_count_short}",
+                                  log_lv=5,
+                                  is_slacker=True)
+            atari_cash = 0
+        else:
+            atari_cash = can_use_cash // sg.g_buy_auto_stock_count_short
 
         sg.g_logger.write_log(f"투자 비율 = {buy_stock_cash_p*100}%", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"투자 비율에 따른 전체 투자금 = {(can_use_cash):,.0f}", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"현재 사용할 수 있는 돈 = {(cur_can_use_cash):,.0f}", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"종목당 구매 할 돈 = {(atari_cash):,.0f}", log_lv=2, is_slacker=True)
-        sg.g_logger.write_log(f"현재 구매완료종목수/전체 = {cur_bought_count}/{max_buy_stock_count}", log_lv=2, is_slacker=True)
+        sg.g_logger.write_log(f"현재 구매완료종목수/전체 = {cur_bought_count}/{sg.g_buy_auto_stock_count_short}", log_lv=2, is_slacker=True)
 
         analysis_data_amount_min = sg.g_json_trading_config['analysis_data_amount_min']
         analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
@@ -354,11 +380,12 @@ else:
 
                     for bought_stock in bought_list:
                         stock_code = bought_stock['code']
-                        db_update_result = sg.g_creon.request_chart_type(stock_code, 20)
+                        cur_min = datetime.now().minute
+                        db_update_result = sg.g_creon.request_chart_type(stock_code, 60)
                         if db_update_result is None:
                             sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 :{stock_code}", log_lv=5, is_slacker=True)
                             continue
-                        if db_update_result[0] > 0 and (db_update_result[1] >= cur_min or cur_min == 59):
+                        if db_update_result[0] > 0 and (db_update_result[1]+1 >= cur_min or cur_min == 59):
                             analysis_data_df_min = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=analysis_data_amount_min)
                             analysis_data_df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day, chart_type="D")
                             if analysis_data_df_min is None or analysis_data_df_day is None:
@@ -369,6 +396,7 @@ else:
                             # ===========================
                             macd_stoch_data_day = sg.g_ets.get_macd_stochastic(df=analysis_data_df_day, slow_d_rolling=day_rolling)
                             macd_stoch_data_df_day = macd_stoch_data_day[0]
+                            macdhist_ave_day = macd_stoch_data_day[1]
                             if len(macd_stoch_data_df_day) == 0:
                                 sg.g_logger.write_log(f"{stock_code} / macd_stoch_data_df_day get_macd_stochastic의 리턴값이 len = 0"
                                                       f" \r\n 거래 정지 되었던 주식일지도?", log_lv=5, is_slacker=True)
@@ -377,16 +405,17 @@ else:
                             # ===========================
                             macd_stoch_data_min = sg.g_ets.get_macd_stochastic(df=analysis_data_df_min, slow_d_rolling=sg.g_one_day_data_amount)
                             macd_stoch_data_df_min = macd_stoch_data_min[0]
-                            macdhist_ave_min = macd_stoch_data_min[1]
+                            macdhist_ave_m = macd_stoch_data_min[1]
                             if len(macd_stoch_data_df_min) == 0:
                                 sg.g_logger.write_log(f"{stock_code} / macd_stoch_data_df_min get_macd_stochastic의 리턴값이 len = 0"
                                                       f" \r\n 거래 정지 되었던 주식일지도?", log_lv=5, is_slacker=True)
                                 continue
                             macd_stoch_data_df_min = macd_stoch_data_df_min.iloc[-1]
                             # ===========================
-                            is_sell = sg.g_ets.is_buy_sell(slow_d_day=macd_stoch_data_df_day['slow_d'],
-                                                                 df_macd_min=macd_stoch_data_df_min,
-                                                                 ave_min=macdhist_ave_min)
+                            is_sell = sg.g_ets.is_buy_sell(df_day=macd_stoch_data_df_day,
+                                                           macdhist_ave_day=macdhist_ave_day,
+                                                           df_min=macd_stoch_data_df_min,
+                                                           macdhist_ave_m=macdhist_ave_m)
                             if is_sell is False:
                                 # ============== 판다 ================
                                 is_sell_success = sg.g_creon.sell_stock(stock_code)
@@ -397,7 +426,7 @@ else:
                                     sg.g_logger.write_log(f"매도 했습니다.\r\n"
                                                           f"stock_code = {stock_code}\r\n"
                                                           f"1주 가격 = {current_price}\r\n"
-                                                          f"이제 {max_buy_stock_count-bought_count}개 살 수 있습니다.", log_lv=2, is_slacker=True)
+                                                          f"이제 {sg.g_buy_auto_stock_count_short-bought_count}개 살 수 있습니다.", log_lv=2, is_slacker=True)
 
                             sg.g_logger.write_log(f"{stock_code}===============팔까 말까 계산 처리...E N D", log_lv=2)
                         else:
@@ -407,7 +436,7 @@ else:
                                                   f"db_update_result[1] = {db_update_result[1]}\r\n"
                                                   f"cur_min = {cur_min}", log_lv=3,  is_slacker=True)
 
-                    if bought_count < max_buy_stock_count:
+                    if bought_count < sg.g_buy_auto_stock_count_short:
                         for stock_name in kau_list:
                             stock_code = sg.g_market_db.get_stock_code(stock_name)
                             if stock_code is None:
@@ -419,12 +448,13 @@ else:
                                 sg.g_logger.write_log(f"이미 산 종목:{is_bought['name']}", log_lv=2)
                                 continue
 
+                            cur_min = datetime.now().minute
                             db_update_result = sg.g_creon.request_day_chart_type(stock_code, 1)  # 당일 9시 이후 데이터를 받아옴
                             if db_update_result is None:
                                 sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패 :{stock_name}", log_lv=3)
                                 continue
 
-                            if True:
+                            if db_update_result[0] > 0 and (db_update_result[1]+1 >= cur_min or cur_min == 59):
                                 analysis_data_df_min = sg.g_market_db.get_cur_stock_price(stock_code, day_ago=analysis_data_amount_min)
                                 analysis_data_df_day = sg.g_market_db.get_past_stock_price(stock_code,
                                                                                            analysis_data_amount_day,
@@ -487,9 +517,9 @@ else:
                                 sg.g_logger.write_log(f"===============살까 말까 계산 처리...E N D", log_lv=2)
                             else:
                                 sg.g_logger.write_log(f"Creon 으로 데이터를 받지 못 했습니다. DB 업뎃 실패\r\n"
-                                                      f"stock_name = {stock_name}"
-                                                      f"db_update_result[0] = {db_update_result[0]}"
-                                                      f"db_update_result[1] = {db_update_result[1]}"
+                                                      f"stock_name = {stock_name}\r\n"
+                                                      f"db_update_result[0] = {db_update_result[0]}\r\n"
+                                                      f"db_update_result[1] = {db_update_result[1]}\r\n"
                                                       f"cur_min = {cur_min}", log_lv=3, is_slacker=False)
 
                     if (cur_min % 30) <= 5 and is_notice is False:

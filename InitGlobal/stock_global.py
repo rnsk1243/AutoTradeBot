@@ -26,7 +26,8 @@ global g_creon_login
 global g_bought_short_list
 global g_buy_amount
 global g_exception_slacker
-global g_day_start_money
+global g_day_start_pure_money
+global g_day_start_assets_money
 global g_buy_auto_stock_count_short
 
 global g_cpStockCode
@@ -104,7 +105,8 @@ def init_global():
         global g_path_update_price_stock_config_json
         # global g_test_data_amount
         global g_one_day_data_amount
-        global g_day_start_money
+        global g_day_start_pure_money
+        global g_day_start_assets_money
 
         g_logger = mylog.MyLogging()
         # =============================================
@@ -124,7 +126,8 @@ def init_global():
         g_bought_short_list = []
         g_buy_amount = 0  # 단타 항목당 구매가능 금액
         g_exception_slacker = 5
-        g_day_start_money = 0
+        g_day_start_pure_money = 0
+        g_day_start_assets_money = 0
         g_path_update_price_stock_config_json ="C:\\stockauto\\MyJson\\update_price_stock_config.json"
         g_one_day_data_amount = 381
         # g_test_data_amount = g_one_day_data_amount * 5

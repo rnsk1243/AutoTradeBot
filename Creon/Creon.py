@@ -99,8 +99,6 @@ class Creon:
     def notice_current_status(self, is_slacker):
         self.__check_and_wait(LT_NONTRADE_REQUEST)  # 要請可能か？チェック
         self.init_cpBalance()
-        if sg.g_day_start_money == 0:
-            sg.g_day_start_money = self.get_current_cash() # sg.g_cpBalance.GetHeaderValue(3)  # 14200199
 
         current_benefit = sg.g_cpBalance.GetHeaderValue(3)
         bought_stock_count = sg.g_cpBalance.GetHeaderValue(7)
@@ -112,8 +110,8 @@ class Creon:
                                   is_con_print=False)
             return
 
-        today_benefit = current_benefit - sg.g_day_start_money
-        today_benefit_per = round((today_benefit / sg.g_day_start_money) * 100, 2)
+        today_benefit = current_benefit - sg.g_day_start_assets_money
+        today_benefit_per = round((today_benefit / sg.g_day_start_assets_money) * 100, 2)
         # sg.g_logger.write_log("↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓", log_lv=2, is_slacker=True, is_con_print=False)
         # sg.g_logger.write_log(f"口座名: {str(sg.g_cpBalance.GetHeaderValue(0))}", log_lv=2, is_slacker=is_slacker, is_con_print=False)
         # sg.g_logger.write_log(f"決済残高収量: {str(sg.g_cpBalance.GetHeaderValue(1))}", log_lv=2, is_slacker=is_slacker, is_con_print=False)
