@@ -163,7 +163,7 @@ class ElderTradeSystem:
             # macdhist_ave_m = df_min['macdhist_ave']
             slow_d_m = df_min['slow_d']
 
-            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
+            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day:
                 result = True
             elif 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
                 result = False
@@ -176,7 +176,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
             return None
 
-    def is_buy_sell_nomal(self, slow_d_buy, slow_d_sell, df_day, df_min):
+    def is_buy_sell_nomal(self, slow_d_buy, slow_d_sell, df_day, df_min, name):
         """
         株を買うか売るか見守るか選択
         :param slow_d_buy:
@@ -209,12 +209,17 @@ class ElderTradeSystem:
             # else:
             #     result = None
 
-            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day and slow_d_day <= slow_d_buy and slow_d_m <= slow_d_buy:
+            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day:
+                # sg.g_logger.write_log(f"\t산다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
+                #                       is_con_print=True)
                 result = True
             elif 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
+                # sg.g_logger.write_log(f"\t판다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
+                #                       is_con_print=True)
                 result = False
             else:
                 result = None
+
 
             # if macdhist_ave_m > 0 and macdhist_m > 0 and slow_d_day <= slow_d_buy:
             #     result = True

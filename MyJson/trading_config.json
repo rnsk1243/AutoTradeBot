@@ -1,6 +1,6 @@
 {
   "buy_stock_cash": 50,
-  "buy_auto_stock_count_short": 5,
+  "buy_auto_stock_count_short": 20,
   "analysis_data_amount_min": 15,
   "analysis_data_amount_day": 90,
   "day_rolling": 5,
