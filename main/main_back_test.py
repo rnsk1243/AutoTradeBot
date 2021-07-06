@@ -15,8 +15,8 @@ bene_money_pro_total = 0
 fees = 0.0014
 buy_persent = 90
 money = 10000000
-# test_target_stock_list = sg.g_json_trading_config['buy_list']
-test_target_stock_list = list(sg.g_market_db.get_stock_info_all().values())
+test_target_stock_list = sg.g_json_trading_config['buy_list']
+# test_target_stock_list = list(sg.g_market_db.get_stock_info_all().values())
 test_stock_amount = len(test_target_stock_list)
 comp_count = 0
 benefit_OK = 0
@@ -145,19 +145,19 @@ else:
             if df_data_min is None:
                 continue
 
-            df_data_min.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_m.xlsx",
-                                  sheet_name=f'분석데이터m')
-            df_ascending_data_m = df_data_min.sort_values('close', ascending=True)
-
-            xlsx_analysis_ascending_true_m = xlsx_analysis_ascending_true_m.append(df_ascending_data_m.iloc[0])
-            xlsx_analysis_ascending_false_m = xlsx_analysis_ascending_false_m.append(df_ascending_data_m.iloc[-1])
-
-            df_data_day.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_d.xlsx",
-                                  sheet_name=f'분석데이터d')
-            df_ascending_data_d = df_data_day.sort_values('close', ascending=True)
-
-            xlsx_analysis_ascending_true_d = xlsx_analysis_ascending_true_d.append(df_ascending_data_d.iloc[0])
-            xlsx_analysis_ascending_false_d = xlsx_analysis_ascending_false_d.append(df_ascending_data_d.iloc[-1])
+            # df_data_min.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_m.xlsx",
+            #                       sheet_name=f'분석데이터m')
+            # df_ascending_data_m = df_data_min.sort_values('close', ascending=True)
+            #
+            # xlsx_analysis_ascending_true_m = xlsx_analysis_ascending_true_m.append(df_ascending_data_m.iloc[0])
+            # xlsx_analysis_ascending_false_m = xlsx_analysis_ascending_false_m.append(df_ascending_data_m.iloc[-1])
+            #
+            # df_data_day.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_d.xlsx",
+            #                       sheet_name=f'분석데이터d')
+            # df_ascending_data_d = df_data_day.sort_values('close', ascending=True)
+            #
+            # xlsx_analysis_ascending_true_d = xlsx_analysis_ascending_true_d.append(df_ascending_data_d.iloc[0])
+            # xlsx_analysis_ascending_false_d = xlsx_analysis_ascending_false_d.append(df_ascending_data_d.iloc[-1])
 
             back_test_arg_list = []
             bt_obj = bt.BackTest
@@ -169,6 +169,7 @@ else:
             back_test_arg_list.append(df_data_day)
             back_test_arg_list.append(slow_d_buy)  # __slow_d_buy
             back_test_arg_list.append(slow_d_sell)  # __slow_d_sell
+            back_test_arg_list.append(stock_name)
 
             data = bter.feeds.PandasData(dataname=df_data_min)
 
