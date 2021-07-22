@@ -48,22 +48,16 @@ class BackTest(bt.Strategy):
                             now_hour, now_minute, now_second)
         now_data_day = datetime(now_year, now_month, now_day, 0, 0, 0)
 
-        # print(self.__macd_stoch_data_day)
-        #
-        # if now_data_day in self.__macd_stoch_data_day.index:
-        #     print("day index True!!!!!")
-        # else:
-        #     print(self.__macd_stoch_data_day.index)
+        # sg.g_logger.write_log(f"now_data_day\t{now_data_day}", is_con_print=False, log_lv=2)
+        # sg.g_logger.write_log(f"now_data_min\t{now_data_min}", is_con_print=False, log_lv=2)
 
         if now_data_min in self.__macd_stoch_data_min.index and \
                 now_data_day in self.__macd_stoch_data_day.index:
             temp_df_min = self.__macd_stoch_data_min.loc[now_data_min]
             temp_df_day = self.__macd_stoch_data_day.loc[now_data_day]
 
-            # macdhist = temp_df['macdhist']
-            # macdhist_ave = temp_df['macdhist_ave']
-            # # hist_inclination_avg = temp_df['hist_inclination_avg']
-            # slow_d = temp_df['slow_d']
+            # sg.g_logger.write_log(f"\ttemp_df_day\t{temp_df_day}\t", is_con_print=False, log_lv=2)
+            # sg.g_logger.write_log(f"\ttemp_df_min\t{temp_df_min}\t", is_con_print=False, log_lv=2)
 
             # 買う；True　売る；False 何もしない；None
             is_buy_sell = self.__ets.is_buy_sell_nomal(

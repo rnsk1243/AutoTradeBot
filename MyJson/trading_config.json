@@ -1,33 +1,19 @@
 {
   "buy_stock_cash": 50,
   "buy_auto_stock_count_short": 5,
-  "analysis_data_amount_min": 15,
+  "tail_macdhist_m": 5,
+  "tail_macdhist_d": 10,
+  "analysis_data_amount_min": 1,
   "analysis_data_amount_day": 90,
+  "min_rolling": 5,
   "day_rolling": 5,
   "slow_d_buy": 20,
   "slow_d_sell": 85,
   "test_list": [
-    "신풍제약",
-    "아세아시멘트",
-    "하나투어",
-    "삼성바이오로직스",
-    "삼성바이오로직스",
-    "HMM",
-    "씨에스윈드",
-    "SK케미칼",
-    "NAVER",
-    "엔씨소프트",
-    "LG화학",
-    "셀트리온",
-    "LG생활건강",
-    "CJ",
-    "한국조선해양",
-    "녹십자",
-    "CJ제일제당",
-    "신세계",
-    "금호석유"
-  ],
-  "bought_list": [
+    "크리스탈지노믹스",
+    "데브시스터즈",
+    "카카오게임즈",
+    "카카오",
     "CJ",
     "POSCO",
     "OCI",
@@ -45,7 +31,7 @@
     "아모레퍼시픽",
     "한미약품"
   ],
-  "buy_list": [
+  "bought_list": [
     "삼성전자",
     "SK하이닉스",
     "카카오",
@@ -138,7 +124,9 @@
     "키움증권",
     "한국가스공사",
     "일진머티리얼즈",
-    "두산인프라코어",
+    "두산인프라코어"
+  ],
+  "buy_list": [
     "대우건설",
     "두산퓨얼셀",
     "씨에스윈드",

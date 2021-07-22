@@ -1,5 +1,6 @@
 import win32com.client
 import pymysql
+from socket import gethostname
 from Logging import MyLogging as mylog
 from StockDB import DBUpdater as dbu
 from StockDB import MarketDB as md
@@ -44,18 +45,19 @@ global g_conn
 global g_db_updater
 # global g_test_data_amount
 global g_one_day_data_amount
+global g_host_name
 
 def init_json():
     try:
-        with open("C:\\stockauto\\MyJson\\logging.json",      'r', encoding='utf-8') as logging_json, \
-             open("C:\\stockauto\\MyJson\\creonConfig.json",  'r', encoding='utf-8') as creonConfig_json, \
-             open("C:\\stockauto\\MyJson\\update_price_stock_config.json", 'r', encoding='utf-8') as update_price_stock_config_json, \
-             open("C:\\stockauto\\MyJson\\sql.json", 'r', encoding='utf-8') as sql_json, \
-             open("C:\\stockauto\\MyJson\\dbInfo.json", 'r', encoding='utf-8') as dbInfo_json, \
-             open("C:\\stockauto\\MyJson\\trade_stock_list.json", 'r', encoding='utf-8') as trade_stock_list_json, \
-             open("C:\\stockauto\\MyJson\\trading_config.json", 'r', encoding='utf-8') as trading_config_json, \
-             open("C:\\stockauto\\MyJson\\back_test_csv.json", 'r', encoding='utf-8') as back_test_csv_json, \
-             open("C:\\stockauto\\MyJson\\slacker_info.json", 'r', encoding='utf-8') as slacker_info_json:
+        with open("..\\..\\stockauto\\MyJson\\logging.json",      'r', encoding='utf-8') as logging_json, \
+             open("..\\..\\stockauto\\MyJson\\creonConfig.json",  'r', encoding='utf-8') as creonConfig_json, \
+             open("..\\..\\stockauto\\MyJson\\update_price_stock_config.json", 'r', encoding='utf-8') as update_price_stock_config_json, \
+             open("..\\..\\stockauto\\MyJson\\sql.json", 'r', encoding='utf-8') as sql_json, \
+             open("..\\..\\stockauto\\MyJson\\dbInfo.json", 'r', encoding='utf-8') as dbInfo_json, \
+             open("..\\..\\stockauto\\MyJson\\trade_stock_list.json", 'r', encoding='utf-8') as trade_stock_list_json, \
+             open("..\\..\\stockauto\\MyJson\\trading_config.json", 'r', encoding='utf-8') as trading_config_json, \
+             open("..\\..\\stockauto\\MyJson\\back_test_csv.json", 'r', encoding='utf-8') as back_test_csv_json, \
+             open("..\\..\\stockauto\\MyJson\\slacker_info.json", 'r', encoding='utf-8') as slacker_info_json:
             global g_json_logging
             global g_json_creonConfig
             global g_json_update_price_stock_config
@@ -84,7 +86,7 @@ def init_json():
 
     except FileNotFoundError as e:
         print(f"LoadJson jsonファイルを見つかりません。 {str(e)}")
-        # self.__logger.error(f"C:\\StockBot\\Logging\\logging.jsonファイルを見つかりません。: {str(e)}")
+        # self.__logger.error(f"\\StockBot\\Logging\\logging.jsonファイルを見つかりません。: {str(e)}")
 
     except Exception as e:
         print(f"Exception occured LoadJson __init__ : {str(e)}")
@@ -107,6 +109,7 @@ def init_global():
         global g_one_day_data_amount
         global g_day_start_pure_money
         global g_day_start_assets_money
+        global g_host_name
 
         g_logger = mylog.MyLogging()
         # =============================================
@@ -128,16 +131,19 @@ def init_global():
         g_exception_slacker = 5
         g_day_start_pure_money = 0
         g_day_start_assets_money = 0
-        g_path_update_price_stock_config_json ="C:\\stockauto\\MyJson\\update_price_stock_config.json"
+        g_path_update_price_stock_config_json ="..\\..\\stockauto\\MyJson\\update_price_stock_config.json"
         g_one_day_data_amount = 381
+        g_host_name = gethostname()
         # g_test_data_amount = g_one_day_data_amount * 5
         # =============================================
-        init_win32com_client()
+        if g_host_name == host:
+            init_win32com_client()
+
         print("stock_global init end")
 
     except FileNotFoundError as e:
         print(f"LoadJson jsonファイルを見つかりません。 {str(e)}")
-        # self.__logger.error(f"C:\\StockBot\\Logging\\logging.jsonファイルを見つかりません。: {str(e)}")
+        # self.__logger.error(f"\\StockBot\\Logging\\logging.jsonファイルを見つかりません。: {str(e)}")
 
     except Exception as e:
         print(f"Exception occured LoadJson __init__ : {str(e)}")

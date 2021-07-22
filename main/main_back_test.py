@@ -1,21 +1,27 @@
 import sys
 sys.path.append('../')
 from datetime import datetime
+import datetime as dt
+import math
+from datetime import timedelta
 import pandas as pd
 import backtrader as bter
 from InitGlobal import stock_global as sg
 from Trading import BackTest as bt
+import time
+start_time = time.time()
 
 sg.init_global()
 # =======================================
-path_xlsx = "C:\\stockauto\\xlsx\\"
-path_xlsx_more = "C:\\stockauto\\xlsx\\more\\"
+path_xlsx = "..\\..\\stockauto\\xlsx\\"
+path_xlsx_more = "..\\..\\stockauto\\xlsx\\more\\"
 benefit_total = 0
 bene_money_pro_total = 0
 fees = 0.0014
 buy_persent = 90
 money = 10000000
-test_target_stock_list = sg.g_json_trading_config['buy_list']
+test_target_stock_list = sg.g_json_trading_config['test_list']
+# test_target_stock_list = sg.g_json_trading_config['buy_list']
 # test_target_stock_list = list(sg.g_market_db.get_stock_info_all().values())
 test_stock_amount = len(test_target_stock_list)
 comp_count = 0
@@ -24,17 +30,27 @@ benefit_NO = 0
 
 analysis_data_amount_min = sg.g_json_trading_config['analysis_data_amount_min']
 analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
+min_rolling = sg.g_json_trading_config['min_rolling']
 day_rolling = sg.g_json_trading_config['day_rolling']
 kau_list = sg.g_json_trading_config['buy_list']
-
+slow_d_buy = sg.g_json_trading_config['slow_d_buy']
+slow_d_sell = sg.g_json_trading_config['slow_d_sell']
 test_days = 30  # day
-test_days_day = 180
-analysis_data_amount_day = (analysis_data_amount_day * 3) // 5
-
-slow_d_buy = 20
-slow_d_sell = 85
 is_graph = False
-is_graph_code = '씨젠'
+is_graph_code = '크리스탈지노믹스'
+
+algori = "if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day\
+                    and slow_d_day < slow_d_buy and slow_d_m < slow_d_buy"
+
+sg.g_logger.write_log(f"\tanalysis_data_amount_day\t{analysis_data_amount_day}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\tanalysis_data_amount_min\t{analysis_data_amount_min}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\ttail_macdhist_d\t{sg.g_json_trading_config['tail_macdhist_d']}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\ttail_macdhist_m\t{sg.g_json_trading_config['tail_macdhist_m']}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\tmin_rolling\t{min_rolling}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\tday_rolling\t{day_rolling}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\tslow_d_buy\t{slow_d_buy}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\tslow_d_sell\t{slow_d_sell}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\t{algori}\t\t", log_lv=2, is_con_print=False)
 
 def make_test_data(df, chart):
 
@@ -45,73 +61,63 @@ def make_test_data(df, chart):
         sg.g_logger.write_log(f"{stock_name} : data 없음", log_lv=3)
         return None
 
-    df_code = []
-    df_date = []
-    df_week = []
-    df_open = []
-    df_high = []
-    df_low = []
-    df_close = []
-    df_diff = []
-    df_volume = []
-    df_macdhist = []
-    df_slow_d = []
-    # df_hist_inclination_avg = []
-    df_macdhist_ave = []
+    df_analysis = pd.DataFrame()
+    last_time = df.iloc[-1].date
 
-    if chart == 0:
-        kurikai = len(df) - ((analysis_data_amount_min * 3) // 5) * sg.g_one_day_data_amount
-        analysis_data_amount = ((analysis_data_amount_min * 3) // 5) * sg.g_one_day_data_amount
-        slow_d_rolling = sg.g_one_day_data_amount
-        if kurikai < 300:
+    if chart == 0:  # min
+        test_data = df[last_time - timedelta(days=test_days) < df['date']]
+        kurikai = len(test_data)
+
+        analysis_data = df[df['date'] <= last_time - timedelta(days=test_days)]
+        analysis_data = analysis_data[analysis_data.iloc[-1].date - timedelta(days=analysis_data_amount_min) < analysis_data['date']]
+        analysis_data_amount = len(analysis_data)
+
+        slow_d_rolling = min_rolling
+        analysis_amount = ((analysis_data_amount_min * sg.g_one_day_data_amount) * 9) // 14 # 14일중에 9일이 개장
+        if kurikai < 0 or analysis_data_amount < analysis_amount:
             sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
             return None
-    elif chart == 1:
-        kurikai = len(df) - analysis_data_amount_day
-        analysis_data_amount = analysis_data_amount_day
-        slow_d_rolling = 5
-        if kurikai < 10:
+    elif chart == 1:  # day
+        test_data = df[last_time - timedelta(days=test_days) < df['date']]
+        kurikai = len(test_data)
+
+        # if is_print is False:
+        #     sg.g_logger.write_log(f"\ttest기간\t{kurikai}\t\t", log_lv=2, is_con_print=False)
+        #     is_print = True
+
+        analysis_data = df[df['date'] <= last_time - timedelta(days=test_days)]
+        analysis_data = analysis_data[analysis_data.iloc[-1].date - timedelta(days=analysis_data_amount_day) < analysis_data['date']]
+        analysis_data_amount = len(analysis_data)
+
+        slow_d_rolling = day_rolling
+        analysis_amount = (analysis_data_amount_day * 9) // 14  # 14일중에 9일이 개장
+        if kurikai < 0 or analysis_data_amount < analysis_amount:
             sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
             return None
     else:
         return None
     try:
         # ===================================================================
-        for i in range(1, kurikai):
-            end_i = int(analysis_data_amount + i)
-            df_back_data = df[i:end_i]
-            # print(f"data amount = {len(df_back_data)}")
-            macd_stoch_data = sg.g_ets.get_macd_stochastic(df_back_data, slow_d_rolling)
+        for i in range(0, kurikai):
 
-            macd_stoch_data_df = macd_stoch_data[0]
-            macdhist_ave = macd_stoch_data[1]
-            if len(macd_stoch_data_df) == 0:
+            df_back_data = df[i - (analysis_data_amount + kurikai):i - kurikai]
+            # df_back_data = df[i - (analysis_data_amount + kurikai):i - kurikai - analysis_data_amount + 30]
+            # sg.g_logger.write_log(f"\t{i}\t{df_back_data.iloc[0].date}\t{df_back_data.iloc[-1].date}\t", is_con_print=False, log_lv=2)
+            df_back_data_len = len(df_back_data)
+
+            if df_back_data_len < analysis_amount:
+                sg.g_logger.write_log(f"{stock_name} : data / {analysis_amount-df_back_data_len} 적음", log_lv=3)
                 return None
-            # macd_stoch_data_df = sg.g_ets.macd_sec_dpc(macd_stoch_data_df, 1)
-            macd_stoch_data_df = macd_stoch_data_df.iloc[-1]
-            df_code.append(macd_stoch_data_df['code'])
-            df_date.append(macd_stoch_data_df['date'])
-            df_week.append(macd_stoch_data_df['week'])
-            df_open.append(macd_stoch_data_df['open'])
-            df_high.append(macd_stoch_data_df['high'])
-            df_low.append(macd_stoch_data_df['low'])
-            df_close.append(macd_stoch_data_df['close'])
-            df_diff.append(macd_stoch_data_df['diff'])
-            df_volume.append(macd_stoch_data_df['volume'])
-            df_macdhist.append(macd_stoch_data_df['macdhist'])
-            df_slow_d.append(macd_stoch_data_df['slow_d'])
-            # df_hist_inclination_avg.append(macd_stoch_data_df['hist_inclination_avg'])
-            df_macdhist_ave.append(macdhist_ave)
-        # ===================================================================
-        test_data_df = pd.DataFrame(data={'code': df_code, 'date': df_date, 'week': df_week, 'open': df_open,
-                                          'high': df_high, 'low': df_low, 'close': df_close, 'diff': df_diff,
-                                          'volume': df_volume, 'macdhist': df_macdhist, 'slow_d': df_slow_d,
-                                          'macdhist_ave': df_macdhist_ave},
-                                    columns=['code', 'date', 'week', 'open',
-                                             'high', 'low', 'close', 'diff',
-                                             'volume', 'macdhist', 'slow_d', 'macdhist_ave'])
 
-        return test_data_df
+            # print(f"data amount = {len(df_back_data)}")
+            analysis_series = sg.g_ets.get_macd_stochastic(df_back_data, slow_d_rolling)
+            if len(analysis_series) == 0:
+                return None
+            df_analysis = df_analysis.append(analysis_series)
+
+        # sg.g_logger.write_log(f"\t테스트데이터\t{df_analysis}\t", is_con_print=False, log_lv=2)
+        # for end
+        return df_analysis
 
     except Exception as ex:
         print(f"{ex}")
@@ -135,8 +141,8 @@ else:
 
         for stock_code in test_target_stock_list:
             stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
-            df_min = sg.g_market_db.get_past_stock_price(stock_code, test_days)
-            df_day = sg.g_market_db.get_past_stock_price(stock_code, test_days_day, chart_type="D")
+            df_min = sg.g_market_db.get_past_stock_price(stock_code, 360)
+            df_day = sg.g_market_db.get_past_stock_price(stock_code, 360, chart_type="D")
 
             df_data_day = make_test_data(df_day, 1)
             if df_data_day is None:
@@ -145,23 +151,22 @@ else:
             if df_data_min is None:
                 continue
 
-            # df_data_min.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_m.xlsx",
-            #                       sheet_name=f'분석데이터m')
-            # df_ascending_data_m = df_data_min.sort_values('close', ascending=True)
-            #
-            # xlsx_analysis_ascending_true_m = xlsx_analysis_ascending_true_m.append(df_ascending_data_m.iloc[0])
-            # xlsx_analysis_ascending_false_m = xlsx_analysis_ascending_false_m.append(df_ascending_data_m.iloc[-1])
-            #
-            # df_data_day.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_d.xlsx",
-            #                       sheet_name=f'분석데이터d')
-            # df_ascending_data_d = df_data_day.sort_values('close', ascending=True)
-            #
-            # xlsx_analysis_ascending_true_d = xlsx_analysis_ascending_true_d.append(df_ascending_data_d.iloc[0])
-            # xlsx_analysis_ascending_false_d = xlsx_analysis_ascending_false_d.append(df_ascending_data_d.iloc[-1])
+            df_data_min.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_m.xlsx",
+                                  sheet_name=f'분석데이터m')
+            df_ascending_data_m = df_data_min.sort_values('close', ascending=True)
+
+            xlsx_analysis_ascending_true_m = xlsx_analysis_ascending_true_m.append(df_ascending_data_m.iloc[0])
+            xlsx_analysis_ascending_false_m = xlsx_analysis_ascending_false_m.append(df_ascending_data_m.iloc[-1])
+
+            df_data_day.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_d.xlsx",
+                                  sheet_name=f'분석데이터d')
+            df_ascending_data_d = df_data_day.sort_values('close', ascending=True)
+
+            xlsx_analysis_ascending_true_d = xlsx_analysis_ascending_true_d.append(df_ascending_data_d.iloc[0])
+            xlsx_analysis_ascending_false_d = xlsx_analysis_ascending_false_d.append(df_ascending_data_d.iloc[-1])
 
             back_test_arg_list = []
             bt_obj = bt.BackTest
-
             df_data_min.index = pd.to_datetime(df_data_min['date'])
             df_data_day.index = pd.to_datetime(df_data_day['date'])
             back_test_arg_list.append(sg.g_ets)
@@ -208,7 +213,6 @@ else:
                 bene_pro_ave = round((bene_money_pro_total / benefit_OK_NO), 2)
 
             # self.__logger.write_log(f'Final Portfolio Value : {new_money:,.0f} KRW', log_lv=2)
-            money = end_money
             comp_count += 1
             sg.g_logger.write_log(f'Result : \t{stock_code}\t{stock_name}\t{(cur_benefit):,.0f}\t KRW', log_lv=2, is_con_print=False)
             comp_pro = round((comp_count / test_stock_amount) * 100, 2)
@@ -224,20 +228,23 @@ else:
                 plot_obj.plot(style='candlestick')
                 break
             # ========================================
-        xlsx_analysis_ascending_true_m.to_excel(f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_싼순_m.xlsx",
-                                              sheet_name=f'분석데이터m')
-        xlsx_analysis_ascending_false_m.to_excel(f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_비싼순_m.xlsx",
-                                               sheet_name=f'분석데이터m')
-
-        xlsx_analysis_ascending_true_d.to_excel(f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_싼순_d.xlsx",
-                                              sheet_name=f'분석데이터d')
-        xlsx_analysis_ascending_false_d.to_excel(f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_비싼순_d.xlsx",
-                                               sheet_name=f'분석데이터d')
-
+        # xlsx_analysis_ascending_true_m.to_excel(
+        #     f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_싼순_m.xlsx",
+        #     sheet_name=f'분석데이터m')
+        # xlsx_analysis_ascending_false_m.to_excel(
+        #     f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_비싼순_m.xlsx",
+        #     sheet_name=f'분석데이터m')
+        #
+        # xlsx_analysis_ascending_true_d.to_excel(
+        #     f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_싼순_d.xlsx",
+        #     sheet_name=f'분석데이터d')
+        # xlsx_analysis_ascending_false_d.to_excel(
+        #     f"{path_xlsx}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_비싼순_d.xlsx",
+        #     sheet_name=f'분석데이터d')
         # benefit_per = (benefit_total / (money * len(sg.g_json_back_test_csv['csv_list']))) * 100
         # sg.g_logger.write_log(f"benefit_total = {benefit_total}, {benefit_per}%", log_lv=2)
         # sg.g_logger.write_log("back_test main end - python console", log_lv=2)
         # sys.exit(0)
-
+        print("작업시간 : ", time.time() - start_time)
     except Exception as ex:
         sg.g_logger.write_log(f"Exception occured back_test __name__ python console: {str(ex)}", log_lv=5)
