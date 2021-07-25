@@ -1,18 +1,20 @@
 {
   "buy_stock_cash": 50,
   "buy_auto_stock_count_short": 5,
-  "tail_macdhist_m": 5,
+  "tail_macdhist_m": 1,
   "tail_macdhist_d": 10,
   "analysis_data_amount_min": 1,
-  "analysis_data_amount_day": 90,
+  "analysis_data_amount_day": 180,
   "min_rolling": 5,
-  "day_rolling": 5,
+  "day_rolling": 3,
   "slow_d_buy": 20,
   "slow_d_sell": 85,
+  "larry_constant_K": 0.5,
+  "rieki_persent_break": 60,
   "test_list": [
+    "카카오게임즈",
     "크리스탈지노믹스",
     "데브시스터즈",
-    "카카오게임즈",
     "카카오",
     "CJ",
     "POSCO",
@@ -32,6 +34,18 @@
     "한미약품"
   ],
   "bought_list": [
+    "아이티엠반도체",
+    "다우데이타",
+    "현대미포조선",
+    "KG동부제철",
+    "셀트리온",
+    "고려아연",
+    "테스나",
+    "현대위아",
+    "올릭스",
+    "네패스"
+  ],
+  "buy_list": [
     "삼성전자",
     "SK하이닉스",
     "카카오",
@@ -124,9 +138,7 @@
     "키움증권",
     "한국가스공사",
     "일진머티리얼즈",
-    "두산인프라코어"
-  ],
-  "buy_list": [
+    "두산인프라코어",
     "대우건설",
     "두산퓨얼셀",
     "씨에스윈드",

@@ -47,14 +47,17 @@ class BackTest(bt.Strategy):
         now_data_min = datetime(now_year, now_month, now_day,
                             now_hour, now_minute, now_second)
         now_data_day = datetime(now_year, now_month, now_day, 0, 0, 0)
+        mae_data_day = datetime(now_year, now_month, now_day - 1, 0, 0, 0)
 
         # sg.g_logger.write_log(f"now_data_day\t{now_data_day}", is_con_print=False, log_lv=2)
         # sg.g_logger.write_log(f"now_data_min\t{now_data_min}", is_con_print=False, log_lv=2)
 
         if now_data_min in self.__macd_stoch_data_min.index and \
-                now_data_day in self.__macd_stoch_data_day.index:
+                now_data_day in self.__macd_stoch_data_day.index and \
+                mae_data_day in self.__macd_stoch_data_day.index:
             temp_df_min = self.__macd_stoch_data_min.loc[now_data_min]
-            temp_df_day = self.__macd_stoch_data_day.loc[now_data_day]
+            temp_df_day_now = self.__macd_stoch_data_day.loc[now_data_day]
+            temp_df_day_mae = self.__macd_stoch_data_day.loc[mae_data_day]
 
             # sg.g_logger.write_log(f"\ttemp_df_day\t{temp_df_day}\t", is_con_print=False, log_lv=2)
             # sg.g_logger.write_log(f"\ttemp_df_min\t{temp_df_min}\t", is_con_print=False, log_lv=2)
@@ -63,8 +66,9 @@ class BackTest(bt.Strategy):
             is_buy_sell = self.__ets.is_buy_sell_nomal(
                 slow_d_buy=self.__slow_d_buy,
                 slow_d_sell=self.__slow_d_sell,
-                df_day=temp_df_day,
+                df_day=temp_df_day_mae,
                 df_min=temp_df_min,
+                df_today=temp_df_day_now,
                 name=self.__stock_name)
 
             if not self.position:

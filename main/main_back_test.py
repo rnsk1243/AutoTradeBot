@@ -20,8 +20,9 @@ bene_money_pro_total = 0
 fees = 0.0014
 buy_persent = 90
 money = 10000000
-test_target_stock_list = sg.g_json_trading_config['test_list']
-# test_target_stock_list = sg.g_json_trading_config['buy_list']
+# test_target_stock_list = sg.g_json_trading_config['test_list']
+# test_target_stock_list = sg.g_json_trading_config['bought_list']
+test_target_stock_list = sg.g_json_trading_config['buy_list']
 # test_target_stock_list = list(sg.g_market_db.get_stock_info_all().values())
 test_stock_amount = len(test_target_stock_list)
 comp_count = 0
@@ -35,9 +36,11 @@ day_rolling = sg.g_json_trading_config['day_rolling']
 kau_list = sg.g_json_trading_config['buy_list']
 slow_d_buy = sg.g_json_trading_config['slow_d_buy']
 slow_d_sell = sg.g_json_trading_config['slow_d_sell']
-test_days = 30  # day
+larry_constant_K = sg.g_json_trading_config['larry_constant_K']
+rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
+test_days = 20  # day
 is_graph = False
-is_graph_code = '크리스탈지노믹스'
+is_graph_code = '다우데이타'
 
 algori = "if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day\
                     and slow_d_day < slow_d_buy and slow_d_m < slow_d_buy"
@@ -50,6 +53,8 @@ sg.g_logger.write_log(f"\tmin_rolling\t{min_rolling}\t", log_lv=2, is_con_print=
 sg.g_logger.write_log(f"\tday_rolling\t{day_rolling}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\tslow_d_buy\t{slow_d_buy}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\tslow_d_sell\t{slow_d_sell}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\tlarry_constant_K\t{larry_constant_K}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\trieki_persent_break\t{rieki_persent_break}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\t{algori}\t\t", log_lv=2, is_con_print=False)
 
 def make_test_data(df, chart):
@@ -99,7 +104,6 @@ def make_test_data(df, chart):
     try:
         # ===================================================================
         for i in range(0, kurikai):
-
             df_back_data = df[i - (analysis_data_amount + kurikai):i - kurikai]
             # df_back_data = df[i - (analysis_data_amount + kurikai):i - kurikai - analysis_data_amount + 30]
             # sg.g_logger.write_log(f"\t{i}\t{df_back_data.iloc[0].date}\t{df_back_data.iloc[-1].date}\t", is_con_print=False, log_lv=2)
@@ -110,7 +114,7 @@ def make_test_data(df, chart):
                 return None
 
             # print(f"data amount = {len(df_back_data)}")
-            analysis_series = sg.g_ets.get_macd_stochastic(df_back_data, slow_d_rolling)
+            analysis_series = sg.g_ets.get_macd_stochastic(df_back_data)
             if len(analysis_series) == 0:
                 return None
             df_analysis = df_analysis.append(analysis_series)
@@ -151,19 +155,19 @@ else:
             if df_data_min is None:
                 continue
 
-            df_data_min.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_m.xlsx",
-                                  sheet_name=f'분석데이터m')
-            df_ascending_data_m = df_data_min.sort_values('close', ascending=True)
-
-            xlsx_analysis_ascending_true_m = xlsx_analysis_ascending_true_m.append(df_ascending_data_m.iloc[0])
-            xlsx_analysis_ascending_false_m = xlsx_analysis_ascending_false_m.append(df_ascending_data_m.iloc[-1])
-
-            df_data_day.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_d.xlsx",
-                                  sheet_name=f'분석데이터d')
-            df_ascending_data_d = df_data_day.sort_values('close', ascending=True)
-
-            xlsx_analysis_ascending_true_d = xlsx_analysis_ascending_true_d.append(df_ascending_data_d.iloc[0])
-            xlsx_analysis_ascending_false_d = xlsx_analysis_ascending_false_d.append(df_ascending_data_d.iloc[-1])
+            # df_data_min.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_m.xlsx",
+            #                       sheet_name=f'분석데이터m')
+            # df_ascending_data_m = df_data_min.sort_values('close', ascending=True)
+            #
+            # xlsx_analysis_ascending_true_m = xlsx_analysis_ascending_true_m.append(df_ascending_data_m.iloc[0])
+            # xlsx_analysis_ascending_false_m = xlsx_analysis_ascending_false_m.append(df_ascending_data_m.iloc[-1])
+            #
+            # df_data_day.to_excel(f"{path_xlsx_more}{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_{stock_name}_d.xlsx",
+            #                       sheet_name=f'분석데이터d')
+            # df_ascending_data_d = df_data_day.sort_values('close', ascending=True)
+            #
+            # xlsx_analysis_ascending_true_d = xlsx_analysis_ascending_true_d.append(df_ascending_data_d.iloc[0])
+            # xlsx_analysis_ascending_false_d = xlsx_analysis_ascending_false_d.append(df_ascending_data_d.iloc[-1])
 
             back_test_arg_list = []
             bt_obj = bt.BackTest

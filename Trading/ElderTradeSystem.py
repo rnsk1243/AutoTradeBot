@@ -55,7 +55,7 @@ class ElderTradeSystem:
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} print_chart : {str(e)}", log_lv=3)
 
-    def get_macd_stochastic(self, df, slow_d_rolling):
+    def get_macd_stochastic(self, df):
         """
         MACD,ストキャスティクスを抽出
         :param stock_name: 株の名前または株のコード
@@ -67,9 +67,24 @@ class ElderTradeSystem:
                 return None
 
             if df.date.iloc[0].hour == 0:
+                rieki_persent = 0
+                larry_constant_K = sg.g_json_trading_config['larry_constant_K']
+                slow_d_rolling = sg.g_json_trading_config['day_rolling']
                 tail_macdhist = sg.g_json_trading_config['tail_macdhist_d']
+                hennka_price = df['open'] + (((df['high'] - df['low']).shift()) * larry_constant_K)
+                is_hennka_kau = hennka_price < df['high']
+                is_hennka_rieki = hennka_price < df['close']
+                hennka_kau_count = is_hennka_kau.sum()
+                rieki_count = (is_hennka_kau & is_hennka_rieki).sum()
+                if hennka_kau_count > 0:
+                    rieki_persent = round((rieki_count / hennka_kau_count) * 100)
+                df = df.assign(hennka_price=hennka_price,
+                               is_hennka_kau=is_hennka_kau,
+                               is_hennka_rieki=is_hennka_rieki,
+                               rieki_persent=rieki_persent).dropna()
             else:
                 tail_macdhist = sg.g_json_trading_config['tail_macdhist_m']
+                slow_d_rolling = sg.g_json_trading_config['min_rolling']
 
             days_long = round(len(df))
             days_middle = round(len(df) * 0.46)  # 130日:60日:45日の比率で63:(63*0.46):(63*0.35)に決め
@@ -128,13 +143,12 @@ class ElderTradeSystem:
                 df_days_hist_shift = df_days_hist.shift(sg.g_one_day_data_amount*3)  # 60だけずらす
                 delta_hist = df_days_hist - df_days_hist_shift  # どのくらい変化か
                 delta_hist.iloc[0] = 0
-                delta_hist_sec_dpc = (delta_hist / df_days_hist.abs()) * 100 # 変化率
+                delta_hist_sec_dpc = (delta_hist / df_days_hist.abs()) * 100  # 変化率
 
                 hist_inclination_avg = delta_hist_sec_dpc.rolling(window=rolling_day).mean()  # 変化率平均
 
                 df = df.assign(delta_hist_sec_dpc=delta_hist_sec_dpc,
                                hist_inclination_avg=hist_inclination_avg).dropna()
-
                 return df
             else:
                 return None
@@ -180,7 +194,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
             return None
 
-    def is_buy_sell_nomal(self, slow_d_buy, slow_d_sell, df_day, df_min, name):
+    def is_buy_sell_nomal(self, slow_d_buy, slow_d_sell, df_day, df_min, df_today, name):
         """
         株を買うか売るか見守るか選択
         :param slow_d_buy:
@@ -202,10 +216,19 @@ class ElderTradeSystem:
             macdhist_ave_m = df_min['macdhist_diff_ave']
             slow_d_m = df_min['slow_d']
 
+
             h = df_min['date'].hour
             min =df_min['date'].minute
 
-            if macdhist_m < 0 > macdhist_ave_m and macdhist_day < 0 > macdhist_ave_day:
+            if h == 15 and min >= 15:
+                # print(f"{df_min['date'].day}일 장 종료")
+                return False
+
+            rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
+
+            # and df_day['rieki_persent'] > 50
+            if df_today.hennka_price < df_min['close'] and df_day['rieki_persent'] > rieki_persent_break:
+                # if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day:
                 # print(f"macdhist_m = {macdhist_m}")
                 # print(f"macdhist_day = {macdhist_day}")
                 # print(f"macdhist_ave_m = {macdhist_ave_m}")
@@ -215,13 +238,10 @@ class ElderTradeSystem:
                 # sg.g_logger.write_log(f"\t산다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
                 #                       is_con_print=True)
                 result = True
-            elif slow_d_m >= slow_d_sell:
-                # sg.g_logger.write_log(f"\t판다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
-                #                       is_con_print=True)
-                result = False
-            elif h == 15 and min >= 15:
-                # print(f"{df_min['date'].day}일 장 종료")
-                result = False
+            # elif slow_d_m >= slow_d_sell:
+            #     # sg.g_logger.write_log(f"\t판다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
+            #     #                       is_con_print=True)
+            #     result = False
             else:
                 result = None
 
