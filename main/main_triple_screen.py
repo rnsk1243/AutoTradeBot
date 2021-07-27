@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 from InitGlobal import stock_global as sg
 from Utility import Tools as tool
+from requests import get
 
 # def set_format(today_buy_list, today_sell_list, bought_stock_list):
 #
@@ -36,6 +37,8 @@ if __name__ == '__main__':
         # =======================================
         sg.init_global()
         # =======================================
+        ip = get("https://api.ipify.org").text
+        sg.g_logger.write_log(f"My public IP address : \r\n{ip}\r\n", log_lv=2, is_slacker=True)
         branch_name = Repository('.').head.shorthand
         if branch_name != "master":
             sg.g_logger.write_log(f"gitブランチがマスターではないため、実行できません。ブランチ名：{branch_name}", log_lv=2, is_slacker=True)

@@ -78,6 +78,7 @@ class ElderTradeSystem:
                 rieki_count = (is_hennka_kau & is_hennka_rieki).sum()
                 if hennka_kau_count > 0:
                     rieki_persent = round((rieki_count / hennka_kau_count) * 100)
+                    # self.__logger.write_log(f"\trieki_persent\t{rieki_persent}\t", is_con_print=False, log_lv=2)
                 df = df.assign(hennka_price=hennka_price,
                                is_hennka_kau=is_hennka_kau,
                                is_hennka_rieki=is_hennka_rieki,
@@ -194,7 +195,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
             return None
 
-    def is_buy_sell_nomal(self, slow_d_buy, slow_d_sell, df_day, df_min, df_today, name):
+    def is_buy_sell_nomal(self, slow_d_buy, slow_d_sell, df_day, df_min, df_today, name, rieki_persent_break):
         """
         株を買うか売るか見守るか選択
         :param slow_d_buy:
@@ -212,22 +213,23 @@ class ElderTradeSystem:
             macdhist_ave_day = df_day['macdhist_diff_ave']
             slow_d_day = df_day['slow_d']
 
-            macdhist_m = df_min['macdhist']
-            macdhist_ave_m = df_min['macdhist_diff_ave']
-            slow_d_m = df_min['slow_d']
+            # macdhist_m = df_min['macdhist']
+            # macdhist_ave_m = df_min['macdhist_diff_ave']
+            # slow_d_m = df_min['slow_d']
 
 
             h = df_min['date'].hour
-            min =df_min['date'].minute
+            min = df_min['date'].minute
 
             if h == 15 and min >= 15:
                 # print(f"{df_min['date'].day}일 장 종료")
                 return False
 
-            rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
+            # rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
 
             # and df_day['rieki_persent'] > 50
-            if df_today.hennka_price < df_min['close'] and df_day['rieki_persent'] > rieki_persent_break:
+            if df_today.hennka_price < df_min['close'] and df_day['rieki_persent'] > rieki_persent_break and\
+                    slow_d_day < slow_d_buy:
                 # if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day:
                 # print(f"macdhist_m = {macdhist_m}")
                 # print(f"macdhist_day = {macdhist_day}")

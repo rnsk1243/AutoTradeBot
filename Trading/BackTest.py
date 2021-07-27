@@ -11,6 +11,7 @@ class BackTest(bt.Strategy):
             self.__slow_d_buy = arg_list[3]
             self.__slow_d_sell = arg_list[4]
             self.__stock_name = arg_list[5]
+            self.__rieki_persent_break = arg_list[6]
             self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
             self.__buy_price = 0
 
@@ -69,7 +70,8 @@ class BackTest(bt.Strategy):
                 df_day=temp_df_day_mae,
                 df_min=temp_df_min,
                 df_today=temp_df_day_now,
-                name=self.__stock_name)
+                name=self.__stock_name,
+                rieki_persent_break=self.__rieki_persent_break)
 
             if not self.position:
                 if is_buy_sell is True:
