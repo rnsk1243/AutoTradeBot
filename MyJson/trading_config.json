@@ -4,13 +4,18 @@
   "tail_macdhist_m": 1,
   "tail_macdhist_d": 10,
   "analysis_data_amount_min": 1,
-  "analysis_data_amount_day": 1000,
+  "analysis_data_amount_day": 180,
   "min_rolling": 5,
-  "day_rolling": 3,
+  "day_rolling": 5,
   "slow_d_buy": 40,
   "slow_d_sell": 85,
-  "larry_constant_K": 0.5,
+  "larry_constant_K": 0.48,
   "rieki_persent_break": 55,
+  "test_list1": [
+    "NAVER",
+    "셀트리온",
+    "기아"
+  ],
   "test_list": [
     "NAVER",
     "셀트리온",

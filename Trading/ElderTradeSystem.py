@@ -55,7 +55,7 @@ class ElderTradeSystem:
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} print_chart : {str(e)}", log_lv=3)
 
-    def get_macd_stochastic(self, df):
+    def get_macd_stochastic(self, df, larry_constant_K=None):
         """
         MACD,ストキャスティクスを抽出
         :param stock_name: 株の名前または株のコード
@@ -68,7 +68,8 @@ class ElderTradeSystem:
 
             if df.date.iloc[0].hour == 0:
                 rieki_persent = 0
-                larry_constant_K = sg.g_json_trading_config['larry_constant_K']
+                if larry_constant_K is None:
+                    larry_constant_K = sg.g_json_trading_config['larry_constant_K']
                 slow_d_rolling = sg.g_json_trading_config['day_rolling']
                 tail_macdhist = sg.g_json_trading_config['tail_macdhist_d']
                 hennka_price = df['open'] + (((df['high'] - df['low']).shift()) * larry_constant_K)
@@ -209,15 +210,7 @@ class ElderTradeSystem:
                 self.__logger.write_log(f"is_buy_sell_nomal // df_day or df_min is None", log_lv=3)
                 return None
 
-            macdhist_day = df_day['macdhist']
-            macdhist_ave_day = df_day['macdhist_diff_ave']
             slow_d_day = df_day['slow_d']
-
-            # macdhist_m = df_min['macdhist']
-            # macdhist_ave_m = df_min['macdhist_diff_ave']
-            # slow_d_m = df_min['slow_d']
-
-
             h = df_min['date'].hour
             min = df_min['date'].minute
 
@@ -225,34 +218,12 @@ class ElderTradeSystem:
                 # print(f"{df_min['date'].day}일 장 종료")
                 return False
 
-            # rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
-
-            # and df_day['rieki_persent'] > 50
-            if df_today.hennka_price < df_min['close'] and df_day['rieki_persent'] > rieki_persent_break and\
-                    slow_d_day < slow_d_buy:
-                # if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day:
-                # print(f"macdhist_m = {macdhist_m}")
-                # print(f"macdhist_day = {macdhist_day}")
-                # print(f"macdhist_ave_m = {macdhist_ave_m}")
-                # print(f"macdhist_ave_day = {macdhist_ave_day}")
-                # if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day \
-                #         and slow_d_day <= slow_d_sell and slow_d_m <= slow_d_sell:
-                # sg.g_logger.write_log(f"\t산다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
-                #                       is_con_print=True)
+            if df_today.hennka_price < df_min['close'] and \
+                df_day['rieki_persent'] > rieki_persent_break and \
+                slow_d_day < slow_d_buy:
                 result = True
-            # elif slow_d_m >= slow_d_sell:
-            #     # sg.g_logger.write_log(f"\t판다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
-            #     #                       is_con_print=True)
-            #     result = False
             else:
                 result = None
-
-            # if macdhist_ave_m > 0 and macdhist_m > 0 and slow_d_day <= slow_d_buy:
-            #     result = True
-            # elif macdhist_ave_m < 0 and macdhist_m < 0 and slow_d_day >= slow_d_sell:
-            #     result = False
-            # else:
-            #     result = None
 
             return result
 

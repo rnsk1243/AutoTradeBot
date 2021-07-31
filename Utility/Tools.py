@@ -1,4 +1,5 @@
 from itertools import combinations
+import os
 import numpy as np
 import json
 from InitGlobal import stock_global as sg
@@ -82,3 +83,13 @@ def date_normalization(date):
         return
     normal_date = f"{year:04d}-{month:02d}-{day:02d}"
     return normal_date
+
+def createFolder(directory):
+    """
+    :param directory: 住所
+    """
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        sg.g_logger.write_log(f"Tools.py Error: Creating directory.", log_lv=2, is_slacker=False)
