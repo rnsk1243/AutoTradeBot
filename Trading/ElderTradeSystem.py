@@ -55,7 +55,7 @@ class ElderTradeSystem:
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} print_chart : {str(e)}", log_lv=3)
 
-    def get_macd_stochastic(self, df, larry_constant_K=None):
+    def get_macd_stochastic(self, df):
         """
         MACD,ストキャスティクスを抽出
         :param stock_name: 株の名前または株のコード
@@ -66,43 +66,25 @@ class ElderTradeSystem:
             if df is None or len(df) <= 0:
                 return None
 
-            if df.date.iloc[0].hour == 0:
-                rieki_persent = 0
-                if larry_constant_K is None:
-                    larry_constant_K = sg.g_json_trading_config['larry_constant_K']
-                slow_d_rolling = sg.g_json_trading_config['day_rolling']
-                tail_macdhist = sg.g_json_trading_config['tail_macdhist_d']
-                hennka_price = df['open'] + (((df['high'] - df['low']).shift()) * larry_constant_K)
-                is_hennka_kau = hennka_price < df['high']
-                is_hennka_rieki = hennka_price < df['close']
-                hennka_kau_count = is_hennka_kau.sum()
-                rieki_count = (is_hennka_kau & is_hennka_rieki).sum()
-                if hennka_kau_count > 0:
-                    rieki_persent = round((rieki_count / hennka_kau_count) * 100)
-                    # self.__logger.write_log(f"\trieki_persent\t{rieki_persent}\t", is_con_print=False, log_lv=2)
-                df = df.assign(hennka_price=hennka_price,
-                               is_hennka_kau=is_hennka_kau,
-                               is_hennka_rieki=is_hennka_rieki,
-                               rieki_persent=rieki_persent).dropna()
-            else:
-                tail_macdhist = sg.g_json_trading_config['tail_macdhist_m']
-                slow_d_rolling = sg.g_json_trading_config['min_rolling']
+            rieki_persent = 0
+            larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
+            slow_d_rolling = sg.g_json_trading_config['day_rolling']
+            recent_rieki_count_day = sg.g_json_trading_config['recent_rieki_count_day']
 
-            days_long = round(len(df))
-            days_middle = round(len(df) * 0.46)  # 130日:60日:45日の比率で63:(63*0.46):(63*0.35)に決め
-            days_short = round(len(df) * 0.35)
+            hennka_price = df['open'] + (((df['high'] - df['low']).shift()) * larry_constant_K_anl)
+            is_hennka_kau = hennka_price < df['high']
+            is_hennka_rieki = hennka_price < df['close']
+            is_hennka_not_rieki = hennka_price >= df['close']
 
-            ema_long = df.close.ewm(span=days_long).mean()  # close days_long 移動平均
-            ema_middle = df.close.ewm(span=days_middle).mean()  # close days_middle 移動平均
-            macd = ema_middle - ema_long  # MACD線
-            signal = macd.ewm(span=days_short).mean()  # シグナル
-            macdhist = macd - signal # MACD ヒストグラム
-            macdhist_diff_cumsum = macdhist.tail(tail_macdhist).diff().mean()
+            is_rieki = is_hennka_kau & is_hennka_rieki
+            is_not_rieki = is_hennka_kau & is_hennka_not_rieki
+            rieki_count = is_rieki.sum()
+            recent_rieki_count = is_rieki.iloc[-recent_rieki_count_day:].sum()
+            recent_not_rieki_count = is_not_rieki.iloc[-recent_rieki_count_day:].sum()
 
-            if macdhist_diff_cumsum is None or math.isnan(macdhist_diff_cumsum) is True:
-                macdhist_diff_ave = 0
-            else:
-                macdhist_diff_ave = macdhist_diff_cumsum
+            hennka_kau_count = is_hennka_kau.sum()
+            if hennka_kau_count > 0:
+                rieki_persent = round((rieki_count / hennka_kau_count) * 100)
 
             ndays_high = df.high.rolling(window=len(df), min_periods=1).max()  # 7日最大値
             ndays_low = df.low.rolling(window=len(df), min_periods=1).min()  # 7日最小値
@@ -113,17 +95,11 @@ class ElderTradeSystem:
             fast_k = ((df.close - ndays_low) / high_low) * 100  # 早いK線
             slow_d = fast_k.rolling(window=slow_d_rolling).mean()  # 遅いD線
 
-            df_analysis = df.iloc[[-1]].assign(ema_long=[ema_long.iloc[-1]],
-                                      ema_middle=[ema_middle.iloc[-1]],
-                                      macd=[macd.iloc[-1]],
-                                      signal=[signal.iloc[-1]],
-                                      macdhist=[macdhist.iloc[-1]],
-                                      fast_k=[fast_k.iloc[-1]],
-                                      slow_d=[slow_d.iloc[-1]],
-                                      macdhist_diff_ave=[macdhist_diff_ave]).dropna()
-
-            # if len(df_analysis) == 0:
-            #     return None
+            df_analysis = df.iloc[[-1]].assign(slow_d=[slow_d.iloc[-1]]).dropna()
+            df_analysis = df_analysis.assign(hennka_price=hennka_price,
+                                             rieki_persent=rieki_persent,
+                                             recent_rieki_count=recent_rieki_count,
+                                             recent_not_rieki_count=recent_not_rieki_count).dropna()
 
             return df_analysis
 
@@ -131,34 +107,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} get_MACD : {str(e)}", log_lv=3)
             return None
 
-
-    def macd_sec_dpc(self, df, rolling_day):
-        """
-        MACDヒストグラムの増加率平均を救う。
-        :param df: macdヒストグラムカラムがあるDataframe
-        :param days: いつから計算するか
-        :return:　df
-        """
-        try:
-            if 'macdhist' in df.columns:
-                df_days_hist = df['macdhist']  # silce
-                df_days_hist_shift = df_days_hist.shift(sg.g_one_day_data_amount*3)  # 60だけずらす
-                delta_hist = df_days_hist - df_days_hist_shift  # どのくらい変化か
-                delta_hist.iloc[0] = 0
-                delta_hist_sec_dpc = (delta_hist / df_days_hist.abs()) * 100  # 変化率
-
-                hist_inclination_avg = delta_hist_sec_dpc.rolling(window=rolling_day).mean()  # 変化率平均
-
-                df = df.assign(delta_hist_sec_dpc=delta_hist_sec_dpc,
-                               hist_inclination_avg=hist_inclination_avg).dropna()
-                return df
-            else:
-                return None
-
-        except Exception as e:
-            self.__logger.write_log(f"Exception occured {self} macd_sec_dpc : {str(e)}", log_lv=3)
-
-    def is_buy_sell(self, df_day, macdhist_ave_day, df_min, macdhist_ave_m):
+    def is_buy_sell(self, df_day):
         """
         株を買うか売るか見守るか選択
         :param slow_d_buy:
@@ -168,25 +117,17 @@ class ElderTradeSystem:
         :return: タプル(True=買う,False=売る,None=見守る／点数=高いほど買う)
         """
         try:
-            if df_day is None or df_min is None:
-                self.__logger.write_log(f"is_buy_sell_nomal // df_day or df_min is None", log_lv=3)
+            if df_day is None:
+                self.__logger.write_log(f"is_buy_sell // df_day is None", log_lv=3)
                 return None
 
-            slow_d_buy = sg.g_json_trading_config['slow_d_buy']
-            slow_d_sell = sg.g_json_trading_config['slow_d_sell']
+            rieki_persent = df_day['rieki_persent']
+            slow_d = df_day['slow_d']
+            j_rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
+            j_slow_d_buy = sg.g_json_trading_config['slow_d_buy']
 
-            macdhist_day = df_day['macdhist']
-            # macdhist_ave_day = df_day['macdhist_ave']
-            slow_d_day = df_day['slow_d']
-
-            macdhist_m = df_min['macdhist']
-            # macdhist_ave_m = df_min['macdhist_ave']
-            slow_d_m = df_min['slow_d']
-
-            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day:
+            if j_rieki_persent_break < rieki_persent and slow_d < j_slow_d_buy:
                 result = True
-            elif 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
-                result = False
             else:
                 result = None
 
@@ -218,12 +159,32 @@ class ElderTradeSystem:
                 # print(f"{df_min['date'].day}일 장 종료")
                 return False
 
-            if df_today.hennka_price < df_min['close'] and \
-                df_day['rieki_persent'] > rieki_persent_break and \
-                slow_d_day < slow_d_buy:
+            larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
+            hennka_price = df_today.open + ((df_day.high - df_day.low) * larry_constant_K_buy)
+
+            recent_rieki_count = df_day.recent_rieki_count
+            recent_not_rieki_count = df_day.recent_not_rieki_count
+            rieki_persent = df_day.rieki_persent
+            # df_today.hennka_price
+
+            if hennka_price < df_min['close'] and \
+               rieki_persent > rieki_persent_break and \
+               recent_not_rieki_count == 0 <= recent_rieki_count:
                 result = True
             else:
                 result = None
+
+            # if hennka_price < df_min['close'] and \
+            #    rieki_persent > rieki_persent_break and \
+            #    recent_rieki_count >= recent_not_rieki_count:
+            #     result = True
+            # else:
+            #     result = None
+
+            # if hennka_price < df_min['close']:
+            #     result = True
+            # else:
+            #     result = None
 
             return result
 

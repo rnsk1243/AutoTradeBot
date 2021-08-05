@@ -39,11 +39,11 @@ day_rolling = sg.g_json_trading_config['day_rolling']
 kau_list = sg.g_json_trading_config['buy_list']
 slow_d_buy = sg.g_json_trading_config['slow_d_buy']
 slow_d_sell = sg.g_json_trading_config['slow_d_sell']
-larry_constant_K = sg.g_json_trading_config['larry_constant_K']
+larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
 rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
-test_days = 22  # day
+test_days = 31  # day
 is_graph = False
-is_graph_code = '다우데이타'
+is_graph_code = '네이처셀'
 cur_stock_name = ""
 
 algori = "if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day\
@@ -57,11 +57,11 @@ sg.g_logger.write_log(f"\tmin_rolling\t{min_rolling}\t", log_lv=2, is_con_print=
 sg.g_logger.write_log(f"\tday_rolling\t{day_rolling}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\tslow_d_buy\t{slow_d_buy}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\tslow_d_sell\t{slow_d_sell}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\tlarry_constant_K\t{larry_constant_K}\t", log_lv=2, is_con_print=False)
+sg.g_logger.write_log(f"\tlarry_constant_K_anl\t{larry_constant_K_anl}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\trieki_persent_break\t{rieki_persent_break}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\t{algori}\t\t", log_lv=2, is_con_print=False)
 
-def make_test_data(df, chart, larry_constant_K=None, arg4_analysis_data_amount_day=None):
+def make_test_data(df, chart):
 
     # chart : 0 -> m
     # chart : 1 -> day
@@ -96,6 +96,7 @@ def make_test_data(df, chart, larry_constant_K=None, arg4_analysis_data_amount_d
         #     sg.g_logger.write_log(f"\ttest기간\t{kurikai}\t\t", log_lv=2, is_con_print=False)
         #     is_print = True
         analysis_data = df[df['date'] <= last_time - timedelta(days=test_days)]
+        arg4_analysis_data_amount_day = analysis_data_amount_day
         analysis_data = analysis_data[analysis_data.iloc[-1].date - timedelta(days=arg4_analysis_data_amount_day) < analysis_data['date']]
         analysis_data_amount = len(analysis_data)
 
@@ -119,7 +120,7 @@ def make_test_data(df, chart, larry_constant_K=None, arg4_analysis_data_amount_d
                 return None
 
             # print(f"data amount = {len(df_back_data)}")
-            analysis_series = sg.g_ets.get_macd_stochastic(df_back_data, larry_constant_K)
+            analysis_series = sg.g_ets.get_macd_stochastic(df_back_data)
             if len(analysis_series) == 0:
                 return None
             df_analysis = df_analysis.append(analysis_series)
@@ -135,20 +136,20 @@ if __name__ == '__main__':
     try:
         args = sys.argv
         kuriae = int(args[1])
-        arg2_min_slow_d = int(args[2])
-        arg3_max_slow_d = int(args[3])
-        arg4_min_rieki = int(args[4])
-        arg5_max_rieki = int(args[5])
-        arg6_analysis_data_amount_day = int(args[6])
+        arg4_min_rieki = int(args[2])
+        arg5_max_rieki = int(args[3])
+        arg6_analysis_data_amount_day = analysis_data_amount_day
         print(f"kuriae : {kuriae}")
-        print(f"slow_d : {arg2_min_slow_d}～{arg3_max_slow_d}")
         print(f"rieki : {arg4_min_rieki}～{arg5_max_rieki}")
+        is_analysis_random = False
 
         # folder 作成
         if arg6_analysis_data_amount_day == -1:
             folder_name = f"{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_random_day"
+            is_analysis_random = True
         else:
             folder_name = f"{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_{arg6_analysis_data_amount_day}"
+            is_analysis_random = False
 
         print(f"folder_name:{folder_name}")
         tool.createFolder(f"{path_xlsx}{folder_name}")
@@ -156,12 +157,11 @@ if __name__ == '__main__':
         xlsx_analysis = pd.DataFrame()
 
         for i in range(1, kuriae):
-            slow_d_buy = random.randint(arg2_min_slow_d, arg3_max_slow_d)
             rieki_persent_break = random.randint(arg4_min_rieki, arg5_max_rieki)
-            lck = 0.48  # round(random.uniform(0.45, 0.55), 2)
+            lck = 0.5
 
-            if arg6_analysis_data_amount_day == -1:
-                arg6_analysis_data_amount_day = round(random.randint(60, 180), -1)
+            if is_analysis_random is True:
+                arg6_analysis_data_amount_day = round(random.randint(180, 400), -1)
 
             cumulative_benefit = 0
             cumulative_benefit_ave = 0
@@ -172,10 +172,10 @@ if __name__ == '__main__':
             for stock_code in test_target_stock_list:
                 stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
                 cur_stock_name = stock_name
-                df_min = sg.g_market_db.get_past_stock_price(stock_code, 360)
-                df_day = sg.g_market_db.get_past_stock_price(stock_code, 720, chart_type="D")
+                df_min = sg.g_market_db.get_past_stock_price(stock_code, 100)
+                df_day = sg.g_market_db.get_past_stock_price(stock_code, 500, chart_type="D")
 
-                df_data_day = make_test_data(df_day, 1, lck, arg6_analysis_data_amount_day)
+                df_data_day = make_test_data(df_day, 1)
                 if df_data_day is None:
                     continue
                 df_data_min = make_test_data(df_min, 0)
@@ -242,7 +242,7 @@ if __name__ == '__main__':
             print(f"--------------------------------------\r\n"
                   f"slow_d_buy----------【{slow_d_buy}】\r\n"
                   f"rieki_persent_break-【{rieki_persent_break}】\r\n"
-                  f"larry_constant_K----【{lck}】\r\n"
+                  f"larry_constant_K_anl----【{lck}】\r\n"
                   f"arg6_analysis_data_amount_day----【{arg6_analysis_data_amount_day}】\r\n"
                   f"구매건수-------------【{benefit_OK_NO}】\r\n"
                   f"수익누계-------------【{(cumulative_benefit):,.0f}】\r\n"
@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
             xlsx_analysis = xlsx_analysis.append({"slow_d_buy": slow_d_buy,
                                                   "rieki_persent_break": rieki_persent_break,
-                                                  "larry_constant_K": lck,
+                                                  "larry_constant_K_anl": lck,
                                                   "arg6_analysis_data_amount_day": arg6_analysis_data_amount_day,
                                                   "day_rolling": day_rolling,
                                                   "테스트기간": test_days,
@@ -280,7 +280,7 @@ else:
         for stock_code in test_target_stock_list:
             stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
             df_min = sg.g_market_db.get_past_stock_price(stock_code, 360)
-            df_day = sg.g_market_db.get_past_stock_price(stock_code, 2000, chart_type="D")
+            df_day = sg.g_market_db.get_past_stock_price(stock_code, 720, chart_type="D")
 
             df_data_day = make_test_data(df_day, 1)
             if df_data_day is None:

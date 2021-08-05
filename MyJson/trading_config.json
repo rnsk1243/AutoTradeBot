@@ -7,11 +7,14 @@
   "analysis_data_amount_day": 180,
   "min_rolling": 5,
   "day_rolling": 5,
-  "slow_d_buy": 40,
-  "slow_d_sell": 85,
-  "larry_constant_K": 0.48,
-  "rieki_persent_break": 55,
+  "slow_d_buy": 100,
+  "slow_d_sell": 100,
+  "larry_constant_K_anl": 0.53,
+  "larry_constant_K_buy": 0.45,
+  "rieki_persent_break": 67,
+  "recent_rieki_count_day": 4,
   "test_list1": [
+    "네이처셀",
     "NAVER",
     "셀트리온",
     "기아"

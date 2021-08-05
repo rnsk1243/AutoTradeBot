@@ -7,30 +7,6 @@ from InitGlobal import stock_global as sg
 from Utility import Tools as tool
 from requests import get
 
-# def set_format(today_buy_list, today_sell_list, bought_stock_list):
-#
-#     today_d = datetime.now().day
-#     record_date = datetime.now().strftime('%Y-%m-%d')
-#
-#     if today_d == 1:
-#         month_money, cur_bought_count = sg.g_creon.notice_current_status(is_slacker=False)
-#         today_money = month_money
-#     else:
-#         month_money = sg.g_json_my_legend_life['my_legend_life'][record_date]['month_money']
-#         today_money, cur_bought_count = sg.g_creon.notice_current_status(is_slacker=False)
-#
-#     return_pro = round((today_money / month_money) * 100, 2)
-#     naiyou = {record_date: {
-#                             "return_pro": return_pro,
-#                             "month_money": month_money,
-#                             "today_money": today_money,
-#                             "today_buy_list": today_buy_list,
-#                             "today_sell_list": today_sell_list,
-#                             "bought_stock_list": bought_stock_list
-#                            }
-#              }
-#     return naiyou
-
 if __name__ == '__main__':
     try:
         #  7일간의 데이터 개수가 일정개수 이상인 주식만 자동매매 대상으로 할 것
