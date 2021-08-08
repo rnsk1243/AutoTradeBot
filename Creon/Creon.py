@@ -481,6 +481,47 @@ class Creon:
         item['bid'] = sg.g_cpStock.GetHeaderValue(17)  # 매도호가
         return item['cur_price'], item['ask'], item['bid']
 
+    def get_ohlc(self, code, qty):
+        """인자로 받은 종목의 OHLC 가격 정보를 qty 개수만큼 반환한다."""
+        sg.g_cpOhlc.SetInputValue(0, code)  # 종목코드
+        sg.g_cpOhlc.SetInputValue(1, ord('2'))  # 1:기간, 2:개수
+        sg.g_cpOhlc.SetInputValue(4, qty)  # 요청개수
+        sg.g_cpOhlc.SetInputValue(5, [0, 2, 3, 4, 5])  # 0:날짜, 2~5:OHLC
+        sg.g_cpOhlc.SetInputValue(6, ord('D'))  # D:일단위
+        sg.g_cpOhlc.SetInputValue(9, ord('1'))  # 0:무수정주가, 1:수정주가
+        sg.g_cpOhlc.BlockRequest()
+        count = sg.g_cpOhlc.GetHeaderValue(3)  # 3:수신개수
+        columns = ['open', 'high', 'low', 'close']
+        index = []
+        rows = []
+        for i in range(count):
+            index.append(sg.g_cpOhlc.GetDataValue(0, i))
+            rows.append([sg.g_cpOhlc.GetDataValue(1, i), sg.g_cpOhlc.GetDataValue(2, i),
+                         sg.g_cpOhlc.GetDataValue(3, i), sg.g_cpOhlc.GetDataValue(4, i)])
+        df = pd.DataFrame(rows, columns=columns, index=index)
+        return df
+
+    def get_target_price(self, code):
+        """매수 목표가를 반환한다."""
+        try:
+            time_now = datetime.now()
+            str_today = time_now.strftime('%Y%m%d')
+            ohlc = self.get_ohlc(code, 10)
+            if str_today == str(ohlc.iloc[0].name):
+                today_open = ohlc.iloc[0].open
+                lastday = ohlc.iloc[1]
+            else:
+                lastday = ohlc.iloc[0]
+                today_open = lastday[3]
+            lastday_high = lastday[1]
+            lastday_low = lastday[2]
+            target_price = today_open + (lastday_high - lastday_low) * sg.g_json_trading_config['larry_constant_K_buy']
+            return target_price
+        except Exception as ex:
+            sg.g_logger.write_log(f"get_target_price() -> exception! : "
+                                  f"{str(ex)}", log_lv=5, is_slacker=True)
+            return None
+
     # 최유리 IOC 매수
     def buy_stock(self, code, money):
         try:

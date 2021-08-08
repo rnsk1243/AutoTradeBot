@@ -8,10 +8,8 @@ class BackTest(bt.Strategy):
             self.__ets = arg_list[0]
             self.__macd_stoch_data_min = arg_list[1] # macd_stoch_data.index = pd.to_datetime(macd_stoch_data['date'])
             self.__macd_stoch_data_day = arg_list[2]
-            self.__slow_d_buy = arg_list[3]
-            self.__slow_d_sell = arg_list[4]
-            self.__stock_name = arg_list[5]
-            self.__rieki_persent_break = arg_list[6]
+            self.__stock_name = arg_list[3]
+            self.__rieki_persent_break = arg_list[4]
             self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
             self.__buy_price = 0
 
@@ -65,8 +63,6 @@ class BackTest(bt.Strategy):
 
             # 買う；True　売る；False 何もしない；None
             is_buy_sell = self.__ets.is_buy_sell_nomal(
-                slow_d_buy=self.__slow_d_buy,
-                slow_d_sell=self.__slow_d_sell,
                 df_day=temp_df_day_mae,
                 df_min=temp_df_min,
                 df_today=temp_df_day_now,

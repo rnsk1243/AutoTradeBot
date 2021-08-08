@@ -32,13 +32,8 @@ comp_count = 0
 benefit_OK = 0
 benefit_NO = 0
 
-analysis_data_amount_min = sg.g_json_trading_config['analysis_data_amount_min']
 analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
-min_rolling = sg.g_json_trading_config['min_rolling']
-day_rolling = sg.g_json_trading_config['day_rolling']
 kau_list = sg.g_json_trading_config['buy_list']
-slow_d_buy = sg.g_json_trading_config['slow_d_buy']
-slow_d_sell = sg.g_json_trading_config['slow_d_sell']
 larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
 rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
 test_days = 31  # day
@@ -50,13 +45,6 @@ algori = "if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave
                     and slow_d_day < slow_d_buy and slow_d_m < slow_d_buy"
 
 sg.g_logger.write_log(f"\tanalysis_data_amount_day\t{analysis_data_amount_day}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\tanalysis_data_amount_min\t{analysis_data_amount_min}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\ttail_macdhist_d\t{sg.g_json_trading_config['tail_macdhist_d']}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\ttail_macdhist_m\t{sg.g_json_trading_config['tail_macdhist_m']}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\tmin_rolling\t{min_rolling}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\tday_rolling\t{day_rolling}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\tslow_d_buy\t{slow_d_buy}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\tslow_d_sell\t{slow_d_sell}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\tlarry_constant_K_anl\t{larry_constant_K_anl}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\trieki_persent_break\t{rieki_persent_break}\t", log_lv=2, is_con_print=False)
 sg.g_logger.write_log(f"\t{algori}\t\t", log_lv=2, is_con_print=False)
@@ -82,7 +70,7 @@ def make_test_data(df, chart):
         # analysis_data = analysis_data[analysis_data.iloc[-1].date - timedelta(days=analysis_data_amount_min) < analysis_data['date']]
         analysis_data_amount = len(analysis_data)
 
-        analysis_amount = ((analysis_data_amount_min * sg.g_one_day_data_amount) * 9) // 14 # 14일중에 9일이 개장
+        analysis_amount = ((1 * sg.g_one_day_data_amount) * 9) // 14 # 14일중에 9일이 개장
         if kurikai < 0 or analysis_data_amount < analysis_amount:
             sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
             return None
@@ -100,7 +88,6 @@ def make_test_data(df, chart):
         analysis_data = analysis_data[analysis_data.iloc[-1].date - timedelta(days=arg4_analysis_data_amount_day) < analysis_data['date']]
         analysis_data_amount = len(analysis_data)
 
-        slow_d_rolling = day_rolling
         analysis_amount = (arg4_analysis_data_amount_day * 9) // 14  # 14일중에 9일이 개장
         if kurikai < 0 or analysis_data_amount < analysis_amount:
             sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
@@ -189,8 +176,6 @@ if __name__ == '__main__':
                 back_test_arg_list.append(sg.g_ets)
                 back_test_arg_list.append(df_data_min)
                 back_test_arg_list.append(df_data_day)
-                back_test_arg_list.append(slow_d_buy)  # __slow_d_buy
-                back_test_arg_list.append(slow_d_sell)  # __slow_d_sell
                 back_test_arg_list.append(stock_name)
                 back_test_arg_list.append(rieki_persent_break)
 
@@ -240,7 +225,6 @@ if __name__ == '__main__':
                 syueki = 0
 
             print(f"--------------------------------------\r\n"
-                  f"slow_d_buy----------【{slow_d_buy}】\r\n"
                   f"rieki_persent_break-【{rieki_persent_break}】\r\n"
                   f"larry_constant_K_anl----【{lck}】\r\n"
                   f"arg6_analysis_data_amount_day----【{arg6_analysis_data_amount_day}】\r\n"
@@ -252,11 +236,9 @@ if __name__ == '__main__':
                   f"완료----------------【{round((i/kuriae)*100)}%】\r\n"
                   f"--------------------------------------\r\n")
 
-            xlsx_analysis = xlsx_analysis.append({"slow_d_buy": slow_d_buy,
-                                                  "rieki_persent_break": rieki_persent_break,
+            xlsx_analysis = xlsx_analysis.append({"rieki_persent_break": rieki_persent_break,
                                                   "larry_constant_K_anl": lck,
                                                   "arg6_analysis_data_amount_day": arg6_analysis_data_amount_day,
-                                                  "day_rolling": day_rolling,
                                                   "테스트기간": test_days,
                                                   "구매건수": benefit_OK_NO,
                                                   "수익누계": cumulative_benefit,
@@ -310,8 +292,6 @@ else:
             back_test_arg_list.append(sg.g_ets)
             back_test_arg_list.append(df_data_min)
             back_test_arg_list.append(df_data_day)
-            back_test_arg_list.append(slow_d_buy)  # __slow_d_buy
-            back_test_arg_list.append(slow_d_sell)  # __slow_d_sell
             back_test_arg_list.append(stock_name)
             back_test_arg_list.append(rieki_persent_break)
 
