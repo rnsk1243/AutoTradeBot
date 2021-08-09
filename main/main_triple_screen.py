@@ -82,7 +82,7 @@ if __name__ == '__main__':
         kau_list = sg.g_json_trading_config['buy_list']
 
         t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
-        t_ready = datetime.now().replace(hour=9, minute=1, second=0, microsecond=0)
+        t_ready = datetime.now().replace(hour=9, minute=2, second=0, microsecond=0)
         t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
         t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
         t_stock_end = datetime.now().replace(hour=15, minute=20, second=0, microsecond=0)
@@ -159,7 +159,7 @@ if __name__ == '__main__':
                             if hennka_price is None or current_price is None:
                                 continue
 
-                            is_buy = sg.g_ets.is_buy_sell(df_yester_day=analysis_series,
+                            is_buy = sg.g_ets.is_buy_sell(df_yester_day=analysis_series.iloc[-1],
                                                   hennka_price=hennka_price,
                                                   cur_price=current_price)
                             if is_buy is True:
