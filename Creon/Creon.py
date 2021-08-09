@@ -516,7 +516,7 @@ class Creon:
             lastday_high = lastday[1]
             lastday_low = lastday[2]
             target_price = today_open + ((lastday_high - lastday_low) * sg.g_json_trading_config['larry_constant_K_buy'])
-            return target_price
+            return target_price, today_open
         except Exception as ex:
             sg.g_logger.write_log(f"get_target_price() -> exception! : "
                                   f"{str(ex)}", log_lv=5, is_slacker=True)

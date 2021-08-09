@@ -80,7 +80,8 @@ if __name__ == '__main__':
                               is_slacker=True)
 
         analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
-        kau_list = sg.g_json_trading_config['buy_list']
+        kau_list_all = sg.g_json_trading_config['buy_list']
+        kau_list_plus = []
 
         t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
         t_ready = datetime.now().replace(hour=9, minute=2, second=0, microsecond=0)
@@ -90,6 +91,7 @@ if __name__ == '__main__':
 
         old_min = -1
         is_notice = False
+        is_pluse = False
         today_hennka_prices = {}
         while True:
             t_now = datetime.now()
@@ -99,20 +101,37 @@ if __name__ == '__main__':
                 print("--떡상 기원--")
 
             elif t_ready <= t_now < t_start:
-                for stock_name in kau_list:
+                kau_list_plus = []
+                for stock_name in kau_list_all:
                     stock_code = sg.g_market_db.get_stock_code(stock_name)
-                    hennka_price = sg.g_creon.get_target_price(code=stock_code)
-                    today_hennka_prices[stock_code] = hennka_price
-
+                    if stock_code is not None:
+                        hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
+                        today_hennka_prices[stock_code] = hennka_price
+                        current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
+                        if today_open < current_price:
+                            kau_list_plus.append(stock_name)
+                    else:
+                        continue
+                sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
             elif t_start <= t_now < t_sell_start:
                 if cur_min != old_min:
                     old_min = cur_min
-
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                     bought_count = len(bought_list)
-
                     if bought_count <= sg.g_buy_auto_stock_count_short:
-                        for stock_name in kau_list:
+                        if len(kau_list_plus) == 0:
+                            for stock_name in kau_list_all:
+                                stock_code = sg.g_market_db.get_stock_code(stock_name)
+                                if stock_code is not None:
+                                    hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
+                                    current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
+                                    if today_open < current_price:
+                                        kau_list_plus.append(stock_name)
+                                else:
+                                    continue
+                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
+                                                  is_slacker=True)
+                        for stock_name in kau_list_plus:
                             stock_code = sg.g_market_db.get_stock_code(stock_name)
                             if stock_code is None:
                                 sg.g_logger.write_log(f"종목코드 못 불러옴:{stock_name}", log_lv=3)
@@ -152,7 +171,7 @@ if __name__ == '__main__':
                             if stock_code in today_hennka_prices.keys():
                                 hennka_price = today_hennka_prices[stock_code]
                             else:
-                                hennka_price = sg.g_creon.get_target_price(code=stock_code)
+                                hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
                                 today_hennka_prices[stock_code] = hennka_price
 
                             current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
@@ -173,6 +192,23 @@ if __name__ == '__main__':
                                 # sg.g_logger.write_log(f"{stock_name}====살까 말까 계산 처리...E N D", log_lv=2)
                                 continue
 
+                        if ((datetime.now().minute % 60) <= 30) and is_pluse is False:
+                            kau_list_plus = []
+                            for stock_name in kau_list_all:
+                                stock_code = sg.g_market_db.get_stock_code(stock_name)
+                                if stock_code is not None:
+                                    hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
+                                    current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
+                                    if today_open < current_price:
+                                        kau_list_plus.append(stock_name)
+                                else:
+                                    continue
+                            is_pluse = True
+                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
+                                                  is_slacker=True)
+                        elif (datetime.now().minute % 60) > 30:
+                            is_pluse = False
+
                     # 2시간마다 알림
                     if (t_now.hour % 2) == 0 and is_notice is False:
                         sg.g_creon.notice_current_status(is_slacker=True)
@@ -184,7 +220,11 @@ if __name__ == '__main__':
                 bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                 for bought_stock in bought_list:
                     stock_code = bought_stock['code']
-                    hennka_price = today_hennka_prices[stock_code]
+                    if stock_code in today_hennka_prices.keys():
+                        hennka_price = today_hennka_prices[stock_code]
+                    else:
+                        hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
+                        today_hennka_prices[stock_code] = hennka_price
                     # ============== 판다 ================
                     is_sell_success = sg.g_creon.sell_stock(stock_code)
                     if is_sell_success is True:
@@ -283,7 +323,8 @@ else:
         sg.g_logger.write_log(f"현재 구매완료종목수/최대구매종목수 = {cur_bought_count}/{sg.g_buy_auto_stock_count_short}", log_lv=2, is_slacker=True)
 
         analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
-        kau_list = sg.g_json_trading_config['buy_list']
+        kau_list_all = sg.g_json_trading_config['buy_list']
+        kau_list_plus = []
 
         t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
         t_ready = datetime.now().replace(hour=9, minute=2, second=0, microsecond=0)
@@ -293,6 +334,7 @@ else:
 
         old_min = -1
         is_notice = False
+        is_pluse = False
         today_hennka_prices = {}
         while True:
             t_now = datetime.now()
@@ -302,20 +344,36 @@ else:
                 print("--떡상 기원--")
 
             elif t_ready <= t_now < t_start:
-                for stock_name in kau_list:
+                kau_list_plus = []
+                for stock_name in kau_list_all:
                     stock_code = sg.g_market_db.get_stock_code(stock_name)
-                    hennka_price = sg.g_creon.get_target_price(code=stock_code)
-                    today_hennka_prices[stock_code] = hennka_price
-
+                    if stock_code is not None:
+                        hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
+                        today_hennka_prices[stock_code] = hennka_price
+                        current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
+                        if today_open < current_price:
+                            kau_list_plus.append(stock_name)
+                    else:
+                        continue
+                sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
             elif t_start <= t_now < t_sell_start:
                 if cur_min != old_min:
                     old_min = cur_min
-
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                     bought_count = len(bought_list)
-
                     if bought_count <= sg.g_buy_auto_stock_count_short:
-                        for stock_name in kau_list:
+                        if len(kau_list_plus) == 0:
+                            for stock_name in kau_list_all:
+                                stock_code = sg.g_market_db.get_stock_code(stock_name)
+                                if stock_code is not None:
+                                    hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
+                                    current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
+                                    if today_open < current_price:
+                                        kau_list_plus.append(stock_name)
+                                else:
+                                    continue
+                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
+                        for stock_name in kau_list_plus:
                             stock_code = sg.g_market_db.get_stock_code(stock_name)
                             if stock_code is None:
                                 sg.g_logger.write_log(f"종목코드 못 불러옴:{stock_name}", log_lv=3)
@@ -355,7 +413,7 @@ else:
                             if stock_code in today_hennka_prices.keys():
                                 hennka_price = today_hennka_prices[stock_code]
                             else:
-                                hennka_price = sg.g_creon.get_target_price(code=stock_code)
+                                hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
                                 today_hennka_prices[stock_code] = hennka_price
 
                             current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
@@ -376,6 +434,22 @@ else:
                                 # sg.g_logger.write_log(f"{stock_name}====살까 말까 계산 처리...E N D", log_lv=2)
                                 continue
 
+                        if ((datetime.now().minute % 60) <= 30) and is_pluse is False:
+                            kau_list_plus = []
+                            for stock_name in kau_list_all:
+                                stock_code = sg.g_market_db.get_stock_code(stock_name)
+                                if stock_code is not None:
+                                    hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
+                                    current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
+                                    if today_open < current_price:
+                                        kau_list_plus.append(stock_name)
+                                else:
+                                    continue
+                            is_pluse = True
+                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
+                        elif (datetime.now().minute % 60) > 30:
+                            is_pluse = False
+
                     # 2시간마다 알림
                     if (t_now.hour % 2) == 0 and is_notice is False:
                         sg.g_creon.notice_current_status(is_slacker=True)
@@ -387,7 +461,11 @@ else:
                 bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                 for bought_stock in bought_list:
                     stock_code = bought_stock['code']
-                    hennka_price = today_hennka_prices[stock_code]
+                    if stock_code in today_hennka_prices.keys():
+                        hennka_price = today_hennka_prices[stock_code]
+                    else:
+                        hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
+                        today_hennka_prices[stock_code] = hennka_price
                     # ============== 판다 ================
                     is_sell_success = sg.g_creon.sell_stock(stock_code)
                     if is_sell_success is True:
