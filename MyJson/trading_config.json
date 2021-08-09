@@ -1,10 +1,10 @@
 {
-  "buy_stock_cash": 10,
-  "buy_auto_stock_count_short": 2,
+  "buy_stock_cash": 30,
+  "buy_auto_stock_count_short": 3,
   "analysis_data_amount_day": 180,
-  "larry_constant_K_anl": 0.53,
-  "larry_constant_K_buy": 0.45,
-  "rieki_persent_break": 67,
+  "larry_constant_K_anl": 0.4,
+  "larry_constant_K_buy": 0.35,
+  "rieki_persent_break": 57,
   "recent_rieki_count_day": 4,
   "test_list1": [
     "네이처셀",

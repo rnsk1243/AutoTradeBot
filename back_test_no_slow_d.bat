@@ -1,3 +1,3 @@
 color a
 cd Z:\stockauto\main
-python Z:\stockauto\main\main_back_test.py 10 63 75
+python Z:\stockauto\main\main_back_test.py 10 50 60

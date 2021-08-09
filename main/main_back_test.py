@@ -24,8 +24,8 @@ buy_persent = 90
 money = 10000000
 # test_target_stock_list = sg.g_json_trading_config['test_list1']
 # test_target_stock_list = sg.g_json_trading_config['bought_list']
-test_target_stock_list = sg.g_json_trading_config['buy_list']
-# test_target_stock_list = sg.g_json_trading_config['all_list']
+# test_target_stock_list = sg.g_json_trading_config['buy_list']
+test_target_stock_list = sg.g_json_trading_config['all_list']
 # test_target_stock_list = list(sg.g_market_db.get_stock_info_all().values())
 test_stock_amount = len(test_target_stock_list)
 comp_count = 0
@@ -36,7 +36,7 @@ analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
 kau_list = sg.g_json_trading_config['buy_list']
 larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
 rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
-test_days = 10  # day
+test_days = 30  # day
 is_graph = False
 is_graph_code = '네이처셀'
 cur_stock_name = ""
@@ -129,6 +129,7 @@ if __name__ == '__main__':
         print(f"kuriae : {kuriae}")
         print(f"rieki : {arg4_min_rieki}～{arg5_max_rieki}")
         is_analysis_random = False
+        recent_rieki_count_day = sg.g_json_trading_config['recent_rieki_count_day']
 
         # folder 作成
         if arg6_analysis_data_amount_day == -1:
@@ -145,7 +146,8 @@ if __name__ == '__main__':
 
         for i in range(1, kuriae):
             rieki_persent_break = random.randint(arg4_min_rieki, arg5_max_rieki)
-            lck = 0.5
+            larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
+            larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
 
             if is_analysis_random is True:
                 arg6_analysis_data_amount_day = round(random.randint(180, 400), -1)
@@ -226,7 +228,8 @@ if __name__ == '__main__':
 
             print(f"--------------------------------------\r\n"
                   f"rieki_persent_break-【{rieki_persent_break}】\r\n"
-                  f"larry_constant_K_anl----【{lck}】\r\n"
+                  f"larry_constant_K_anl----【{larry_constant_K_anl}】\r\n"
+                  f"larry_constant_K_buy----【{larry_constant_K_buy}】\r\n"
                   f"arg6_analysis_data_amount_day----【{arg6_analysis_data_amount_day}】\r\n"
                   f"구매건수-------------【{benefit_OK_NO}】\r\n"
                   f"수익누계-------------【{(cumulative_benefit):,.0f}】\r\n"
@@ -237,14 +240,16 @@ if __name__ == '__main__':
                   f"--------------------------------------\r\n")
 
             xlsx_analysis = xlsx_analysis.append({"rieki_persent_break": rieki_persent_break,
-                                                  "larry_constant_K_anl": lck,
+                                                  "larry_constant_K_anl": larry_constant_K_anl,
+                                                  "larry_constant_K_buy": larry_constant_K_buy,
                                                   "arg6_analysis_data_amount_day": arg6_analysis_data_amount_day,
                                                   "테스트기간": test_days,
                                                   "구매건수": benefit_OK_NO,
                                                   "수익누계": cumulative_benefit,
                                                   "수익누계평균": cumulative_benefit_ave,
                                                   "이득확률": bene_pro,
-                                                  "수익평균": syueki}, ignore_index=True)
+                                                  "수익평균": syueki,
+                                                  "recent_rieki_count_day": recent_rieki_count_day}, ignore_index=True)
 
             xlsx_analysis.to_excel(f"{path_xlsx}{folder_name}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과.xlsx",
                                    sheet_name=f'결과')

@@ -114,7 +114,7 @@ class ElderTradeSystem:
 
             if cur_h == 9 and cur_min < 5:
                 return None
-            elif (cur_h == 9 and cur_min >= 5) or (9 < cur_h <= 14) or (cur_h == 15 and cur_min < 15):
+            elif (cur_h == 9 and cur_min >= 5) or (9 < cur_h <= 14) or (cur_h == 14 and cur_min < 60):
                 rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
                 rieki_persent = df_yester_day.rieki_persent
                 recent_not_rieki_count = df_yester_day.recent_not_rieki_count
