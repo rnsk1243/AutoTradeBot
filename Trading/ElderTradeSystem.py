@@ -120,7 +120,7 @@ class ElderTradeSystem:
                 recent_not_rieki_count = df_yester_day.recent_not_rieki_count
                 recent_rieki_count = df_yester_day.recent_rieki_count
 
-                if hennka_price < cur_price and \
+                if hennka_price < cur_price < (hennka_price * 1.003) and \
                    rieki_persent > rieki_persent_break and \
                    recent_not_rieki_count == 0 <= recent_rieki_count:
                     result = True
