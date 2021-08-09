@@ -19,7 +19,7 @@
       "class": "logging.handlers.TimedRotatingFileHandler",
       "level": "DEBUG",
       "formatter": "logFileFormatter",
-      "filename": "C:/StockBot/log/AppLog.log",
+      "filename": "..\\..\\stockauto\\log\\AppLog.log",
       "when": "midnight",
       "interval": 1,
       "backupCount": 30,
@@ -36,7 +36,7 @@
   },
   "logInfo":
   {
-    "logFileNameArray": "C:/stockauto/log/stockAutoLog.log",
+    "logFileNameArray": "..\\..\\stockauto\\log\\stockAutoLog.log",
     "logLevel":
     {
       "SET_VALUE": 20,

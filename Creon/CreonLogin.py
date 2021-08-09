@@ -33,7 +33,7 @@ class CreonLogin:
         :return:
         """
         try:
-            with open('C:\stockauto\MyJson\creonInfo.json', 'r', encoding='utf-8') as creonInfo_json:
+            with open("..\\..\\stockauto\\MyJson\\creonInfo.json", 'r', encoding='utf-8') as creonInfo_json:
                 creonInfo = json.load(creonInfo_json)
 
                 # os.system('taskkill /IM coStarter* /F /T')
@@ -50,7 +50,7 @@ class CreonLogin:
                 sg.g_logger.write_log('Creonログイン完了', log_lv=2, is_slacker=True)
 
         except FileNotFoundError as e:
-            sg.g_logger.write_log(f"C:\\StockBot\\creonInfo.jsonファイルを見つかりません。 {str(e)}", log_lv=4, is_slacker=True)
+            sg.g_logger.write_log(f"..\\..\\stockauto\\MyJson\\creonInfo.jsonファイルを見つかりません。 {str(e)}", log_lv=4, is_slacker=True)
         except Exception as e:
             sg.g_logger.write_log(f"Exception occured LoginCreon : {str(e)}", log_lv=5, is_slacker=True)
 
@@ -68,7 +68,7 @@ class CreonLogin:
             self.kill_client()
             app = application.Application()
             app.start(
-                'C:\CREON\STARTER\coStarter.exe /prj:cp /id:{id} /pwd:{pwd} /pwdcert:{pwdcert} /autostart'.format(
+                "..\\..\\CREON\\STARTER\\coStarter.exe /prj:cp /id:{id} /pwd:{pwd} /pwdcert:{pwdcert} /autostart".format(
                     id=id_, pwd=pwd, pwdcert=pwdcert
                 )
             )

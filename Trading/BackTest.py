@@ -8,9 +8,8 @@ class BackTest(bt.Strategy):
             self.__ets = arg_list[0]
             self.__macd_stoch_data_min = arg_list[1] # macd_stoch_data.index = pd.to_datetime(macd_stoch_data['date'])
             self.__macd_stoch_data_day = arg_list[2]
-            self.__slow_d_buy = arg_list[3]
-            self.__slow_d_sell = arg_list[4]
-            self.__stock_name = arg_list[5]
+            self.__stock_name = arg_list[3]
+            self.__rieki_persent_break = arg_list[4]
             self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
             self.__buy_price = 0
 
@@ -47,31 +46,28 @@ class BackTest(bt.Strategy):
         now_data_min = datetime(now_year, now_month, now_day,
                             now_hour, now_minute, now_second)
         now_data_day = datetime(now_year, now_month, now_day, 0, 0, 0)
+        mae_data_day = datetime(now_year, now_month, now_day - 1, 0, 0, 0)
 
-        # print(self.__macd_stoch_data_day)
-        #
-        # if now_data_day in self.__macd_stoch_data_day.index:
-        #     print("day index True!!!!!")
-        # else:
-        #     print(self.__macd_stoch_data_day.index)
+        # sg.g_logger.write_log(f"now_data_day\t{now_data_day}", is_con_print=False, log_lv=2)
+        # sg.g_logger.write_log(f"now_data_min\t{now_data_min}", is_con_print=False, log_lv=2)
 
         if now_data_min in self.__macd_stoch_data_min.index and \
-                now_data_day in self.__macd_stoch_data_day.index:
+                now_data_day in self.__macd_stoch_data_day.index and \
+                mae_data_day in self.__macd_stoch_data_day.index:
             temp_df_min = self.__macd_stoch_data_min.loc[now_data_min]
-            temp_df_day = self.__macd_stoch_data_day.loc[now_data_day]
+            temp_df_day_now = self.__macd_stoch_data_day.loc[now_data_day]
+            temp_df_day_mae = self.__macd_stoch_data_day.loc[mae_data_day]
 
-            # macdhist = temp_df['macdhist']
-            # macdhist_ave = temp_df['macdhist_ave']
-            # # hist_inclination_avg = temp_df['hist_inclination_avg']
-            # slow_d = temp_df['slow_d']
+            # sg.g_logger.write_log(f"\ttemp_df_day\t{temp_df_day}\t", is_con_print=False, log_lv=2)
+            # sg.g_logger.write_log(f"\ttemp_df_min\t{temp_df_min}\t", is_con_print=False, log_lv=2)
 
             # 買う；True　売る；False 何もしない；None
             is_buy_sell = self.__ets.is_buy_sell_nomal(
-                slow_d_buy=self.__slow_d_buy,
-                slow_d_sell=self.__slow_d_sell,
-                df_day=temp_df_day,
+                df_day=temp_df_day_mae,
                 df_min=temp_df_min,
-                name=self.__stock_name)
+                df_today=temp_df_day_now,
+                name=self.__stock_name,
+                rieki_persent_break=self.__rieki_persent_break)
 
             if not self.position:
                 if is_buy_sell is True:

@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 from mplfinance.original_flavor import candlestick_ohlc
 import matplotlib.dates as mdates
-import math
+from datetime import datetime
 from InitGlobal import stock_global as sg
 
 class ElderTradeSystem:
@@ -44,8 +45,6 @@ class ElderTradeSystem:
             p3 = plt.subplot(3, 1, 3)
             plt.grid(True)
             p3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-            plt.plot(df.number, df['fast_k'], color='c', label='%K')
-            plt.plot(df.number, df['slow_d'], color='k', label='%D')
             plt.plot(df.number, df['hist_inclination_avg'], 'r--', label='MACD-HI-Avg')
             plt.yticks([0, 20, 80, 100])
             plt.legend(loc='best')
@@ -54,7 +53,7 @@ class ElderTradeSystem:
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} print_chart : {str(e)}", log_lv=3)
 
-    def get_macd_stochastic(self, df, slow_d_rolling):
+    def get_macd_stochastic(self, df):
         """
         MACD,ストキャスティクスを抽出
         :param stock_name: 株の名前または株のコード
@@ -62,87 +61,86 @@ class ElderTradeSystem:
         :return: df
         """
         try:
-            if df is None:
-                return df, None
+            if df is None or len(df) <= 0:
+                return None
 
-            if df.date.iloc[0].hour == 0:
-                isChartDay = True
-            else:
-                isChartDay = False
+            rieki_persent = 0
+            larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
+            recent_rieki_count_day = sg.g_json_trading_config['recent_rieki_count_day']
 
-            days_middle = round(len(df)*0.46) # 130日:60日:45日の比率で63:(63*0.46):(63*0.35)に決め
-            days_short = round(len(df)*0.35)
+            df_shift = df.shift().dropna()
+            hennka_price = df['open'] + ((df_shift['high'] - df_shift['low']) * larry_constant_K_anl)
 
-            ema_middle = df.close.ewm(span=days_middle).mean()  # close days_middle 移動平均
-            ema_long = df.close.ewm(span=len(df)).mean()  # close days_long 移動平均
-            macd = ema_middle - ema_long  # MACD線
-            signal = macd.ewm(span=days_short).mean()  # シグナル
-            macdhist = macd - signal # MACD ヒストグラム
-            if isChartDay is True:
-                macdhist_diff_cumsum = macdhist.tail(3).diff().mean()
-            else:
-                macdhist_diff_cumsum = macdhist.tail(10).diff().mean()
+            is_hennka_kau = hennka_price < df['high']
+            is_hennka_rieki = hennka_price < df['close']
+            is_hennka_not_rieki = hennka_price >= df['close']
 
-            if macdhist_diff_cumsum is None or math.isnan(macdhist_diff_cumsum) is True:
-                macdhist_ave = 0
-            else:
-                macdhist_ave = macdhist_diff_cumsum
-                # if len(macdhist_diff_cumsum) > 0:
-                #     macdhist_ave = macdhist_diff_cumsum.tail(1).values[0]
-                # else:
-                #     macdhist_ave = 0
+            is_rieki = is_hennka_kau & is_hennka_rieki
+            is_not_rieki = is_hennka_kau & is_hennka_not_rieki
+            rieki_count = is_rieki.sum()
+            recent_rieki_count = is_rieki.iloc[-recent_rieki_count_day:].sum()
+            recent_not_rieki_count = is_not_rieki.iloc[-recent_rieki_count_day:].sum()
 
-            ndays_high = df.high.rolling(window=len(df), min_periods=1).max()  # 7日最大値
-            ndays_low = df.low.rolling(window=len(df), min_periods=1).min()  # 7日最小値
+            hennka_kau_count = is_hennka_kau.sum()
+            if hennka_kau_count > 0:
+                rieki_persent = round((rieki_count / hennka_kau_count) * 100)
 
-            high_low = (ndays_high - ndays_low)
-            high_low.replace(0, 0.1)
+            df_analysis = df.iloc[[-1]].assign(hennka_price=hennka_price,
+                                               rieki_persent=rieki_persent,
+                                               recent_rieki_count=recent_rieki_count,
+                                               recent_not_rieki_count=recent_not_rieki_count).dropna()
 
-            fast_k = ((df.close - ndays_low) / high_low) * 100  # 早いK線
-            slow_d = fast_k.rolling(window=slow_d_rolling).mean()  # 遅いD線
-
-            df = df.assign(ema_long=ema_long, ema_middle=ema_middle, macd=macd, signal=signal,
-                           macdhist=macdhist, fast_k=fast_k, slow_d=slow_d).dropna()
-
-            return df, macdhist_ave
+            return df_analysis
 
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} get_MACD : {str(e)}", log_lv=3)
-            return None, None
+            return None
 
-
-    def macd_sec_dpc(self, df, rolling_day):
+    def is_buy_sell(self, df_yester_day, hennka_price, cur_price):
         """
-        MACDヒストグラムの増加率平均を救う。
-        :param df: macdヒストグラムカラムがあるDataframe
-        :param days: いつから計算するか
-        :return:　df
+        株を買うか売るか見守るか選択
+        :param df_day:
+        :param df_min:
+        :return: タプル(True=買う,False=売る,None=見守る／点数=高いほど買う)
         """
         try:
-            if 'macdhist' in df.columns:
-                df_days_hist = df['macdhist']  # silce
-                df_days_hist_shift = df_days_hist.shift(sg.g_one_day_data_amount*3)  # 60だけずらす
-                delta_hist = df_days_hist - df_days_hist_shift  # どのくらい変化か
-                delta_hist.iloc[0] = 0
-                delta_hist_sec_dpc = (delta_hist / df_days_hist.abs()) * 100 # 変化率
+            if df_yester_day is None:
+                self.__logger.write_log(f"is_buy_sell // df_yester_day is None", log_lv=3)
+                return None
 
-                hist_inclination_avg = delta_hist_sec_dpc.rolling(window=rolling_day).mean()  # 変化率平均
+            t_now = datetime.now()
+            cur_h = t_now.hour
+            cur_min = t_now.minute
 
-                df = df.assign(delta_hist_sec_dpc=delta_hist_sec_dpc,
-                               hist_inclination_avg=hist_inclination_avg).dropna()
+            if cur_h == 9 and cur_min < 5:
+                return None
+            elif (cur_h == 9 and cur_min >= 5) or (9 < cur_h <= 14) or (cur_h == 15 and cur_min < 15):
+                rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
+                rieki_persent = df_yester_day.rieki_persent
+                recent_not_rieki_count = df_yester_day.recent_not_rieki_count
+                recent_rieki_count = df_yester_day.recent_rieki_count
 
-                return df
+                if hennka_price < cur_price and \
+                   rieki_persent > rieki_persent_break and \
+                   recent_not_rieki_count == 0 <= recent_rieki_count:
+                    result = True
+                else:
+                    result = None
+            elif cur_h == 15 and 15 <= cur_min < 20:
+                # print(f"{df_min['date'].day}일 장 종료")
+                return False
             else:
                 return None
 
-        except Exception as e:
-            self.__logger.write_log(f"Exception occured {self} macd_sec_dpc : {str(e)}", log_lv=3)
+            return result
 
-    def is_buy_sell(self, df_day, macdhist_ave_day, df_min, macdhist_ave_m):
+        except Exception as e:
+            self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
+            return None
+
+    def is_buy_sell_nomal(self, df_day, df_min, df_today, name, rieki_persent_break):
         """
         株を買うか売るか見守るか選択
-        :param slow_d_buy:
-        :param slow_d_sell:
         :param df_day:
         :param df_min:
         :return: タプル(True=買う,False=売る,None=見守る／点数=高いほど買う)
@@ -152,21 +150,24 @@ class ElderTradeSystem:
                 self.__logger.write_log(f"is_buy_sell_nomal // df_day or df_min is None", log_lv=3)
                 return None
 
-            slow_d_buy = sg.g_json_trading_config['slow_d_buy']
-            slow_d_sell = sg.g_json_trading_config['slow_d_sell']
+            h = df_min['date'].hour
+            min = df_min['date'].minute
 
-            macdhist_day = df_day['macdhist']
-            # macdhist_ave_day = df_day['macdhist_ave']
-            slow_d_day = df_day['slow_d']
+            if h == 15 and min >= 15:
+                # print(f"{df_min['date'].day}일 장 종료")
+                return False
 
-            macdhist_m = df_min['macdhist']
-            # macdhist_ave_m = df_min['macdhist_ave']
-            slow_d_m = df_min['slow_d']
+            larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
+            hennka_price = df_today.open + ((df_day.high - df_day.low) * larry_constant_K_buy)
 
-            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day:
+            recent_rieki_count = df_day.recent_rieki_count
+            recent_not_rieki_count = df_day.recent_not_rieki_count
+            rieki_persent = df_day.rieki_persent
+
+            if hennka_price < df_min['close'] and \
+               rieki_persent > rieki_persent_break and \
+               recent_not_rieki_count == 0 <= recent_rieki_count:
                 result = True
-            elif 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
-                result = False
             else:
                 result = None
 
@@ -175,84 +176,3 @@ class ElderTradeSystem:
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
             return None
-
-    def is_buy_sell_nomal(self, slow_d_buy, slow_d_sell, df_day, df_min, name):
-        """
-        株を買うか売るか見守るか選択
-        :param slow_d_buy:
-        :param slow_d_sell:
-        :param df_day:
-        :param df_min:
-        :return: タプル(True=買う,False=売る,None=見守る／点数=高いほど買う)
-        """
-        try:
-            if df_day is None or df_min is None:
-                self.__logger.write_log(f"is_buy_sell_nomal // df_day or df_min is None", log_lv=3)
-                return None
-
-            macdhist_day = df_day['macdhist']
-            macdhist_ave_day = df_day['macdhist_ave']
-            slow_d_day = df_day['slow_d']
-
-            macdhist_m = df_min['macdhist']
-            macdhist_ave_m = df_min['macdhist_ave']
-            slow_d_m = df_min['slow_d']
-
-            # if macdhist_ave_m < 0 and macdhist_ave_day < 0 and \
-            #         macdhist_m < 0 and macdhist_day < 0 and \
-            #         slow_d_m <= slow_d_buy and slow_d_day <= slow_d_buy:
-            #     result = True
-            # elif macdhist_ave_m > 0 and macdhist_ave_day > 0 and \
-            #         macdhist_m > 0 and macdhist_day > 0 and \
-            #         slow_d_m >= slow_d_sell and slow_d_day >= slow_d_sell:
-            #     result = False
-            # else:
-            #     result = None
-
-            if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day:
-                # sg.g_logger.write_log(f"\t산다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
-                #                       is_con_print=True)
-                result = True
-            elif 0 < macdhist_m and slow_d_day >= slow_d_sell and slow_d_m >= slow_d_sell:
-                # sg.g_logger.write_log(f"\t판다\t{name}\t{(df_min['close']):,.0f}\t KRW", log_lv=2,
-                #                       is_con_print=True)
-                result = False
-            else:
-                result = None
-
-
-            # if macdhist_ave_m > 0 and macdhist_m > 0 and slow_d_day <= slow_d_buy:
-            #     result = True
-            # elif macdhist_ave_m < 0 and macdhist_m < 0 and slow_d_day >= slow_d_sell:
-            #     result = False
-            # else:
-            #     result = None
-
-            return result
-
-        except Exception as e:
-            self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
-            return None
-
-    # def is_buy_sell_nomal(self, macdhist_ave, macdhist, slow_d, slow_d_buy, slow_d_sell):
-    #     """
-    #     株を買うか売るか見守るか選択
-    #     :param macd_sec_dpc:
-    #     :param slow_d:
-    #     :return: タプル(True=買う,False=売る,None=見守る／点数=高いほど買う)
-    #     """
-    #     try:
-    #         if macdhist is None or slow_d is None:
-    #             self.__logger.write_log(f"is_buy_sell_nomal macdhist or slow_d is None", log_lv=3)
-    #             return None
-    #         if -350 < macdhist_ave < 0 and macdhist < -320 and slow_d <= slow_d_buy:
-    #             result = True
-    #         elif macdhist_ave > 0 and macdhist > 280 and slow_d >= slow_d_sell:
-    #             result = False
-    #         else:
-    #             result = None
-    #
-    #         return result
-    #
-    #     except Exception as e:
-    #         self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
