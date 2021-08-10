@@ -122,7 +122,7 @@ class ElderTradeSystem:
 
                 if hennka_price < cur_price < (hennka_price * 1.003) and \
                    rieki_persent > rieki_persent_break and \
-                   recent_not_rieki_count == 0 <= recent_rieki_count:
+                   recent_not_rieki_count == 0 < recent_rieki_count:
                     result = True
                 else:
                     result = None
@@ -166,7 +166,7 @@ class ElderTradeSystem:
 
             if hennka_price < df_min['close'] and \
                rieki_persent > rieki_persent_break and \
-               recent_not_rieki_count == 0 <= recent_rieki_count:
+               recent_not_rieki_count == 0 < recent_rieki_count:
                 result = True
             else:
                 result = None
