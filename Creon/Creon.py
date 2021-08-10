@@ -111,7 +111,10 @@ class Creon:
             return
 
         today_benefit = current_benefit - sg.g_day_start_assets_money
-        today_benefit_per = round((today_benefit / sg.g_day_start_assets_money) * 100, 2)
+        if today_benefit != 0:
+            today_benefit_per = round((today_benefit / sg.g_day_start_assets_money) * 100, 2)
+        else:
+            today_benefit_per = 0
         # sg.g_logger.write_log("↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓", log_lv=2, is_slacker=True, is_con_print=False)
         # sg.g_logger.write_log(f"口座名: {str(sg.g_cpBalance.GetHeaderValue(0))}", log_lv=2, is_slacker=is_slacker, is_con_print=False)
         # sg.g_logger.write_log(f"決済残高収量: {str(sg.g_cpBalance.GetHeaderValue(1))}", log_lv=2, is_slacker=is_slacker, is_con_print=False)
@@ -415,6 +418,7 @@ class Creon:
         株の情報を取得する
         :return:(pandas.DataFrame) 株情報
         """
+        self.__check_and_wait(LT_NONTRADE_REQUEST)  # 要請可能か？チェック
         stockCodeList = []
         stockNameList = []
 
@@ -483,6 +487,7 @@ class Creon:
 
     def get_ohlc(self, code, qty):
         """인자로 받은 종목의 OHLC 가격 정보를 qty 개수만큼 반환한다."""
+        self.__check_and_wait(LT_NONTRADE_REQUEST)  # 要請可能か？チェック
         sg.g_cpOhlc.SetInputValue(0, code)  # 종목코드
         sg.g_cpOhlc.SetInputValue(1, ord('2'))  # 1:기간, 2:개수
         sg.g_cpOhlc.SetInputValue(4, qty)  # 요청개수
@@ -504,6 +509,7 @@ class Creon:
     def get_target_price(self, code):
         """매수 목표가를 반환한다."""
         try:
+            self.__check_and_wait(LT_NONTRADE_REQUEST)  # 要請可能か？チェック
             time_now = datetime.now()
             str_today = time_now.strftime('%Y%m%d')
             ohlc = self.get_ohlc(code, 10)

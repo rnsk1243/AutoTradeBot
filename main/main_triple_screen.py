@@ -363,11 +363,14 @@ else:
                     bought_count = len(bought_list)
                     if bought_count <= sg.g_buy_auto_stock_count_short:
                         if len(kau_list_plus) == 0:
+                            ii = 0
                             for stock_name in kau_list_all:
                                 stock_code = sg.g_market_db.get_stock_code(stock_name)
                                 if stock_code is not None:
                                     hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
                                     current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
+                                    print(f"(ii={ii})")
+                                    ii += 1
                                     if today_open < current_price:
                                         kau_list_plus.append(stock_name)
                                 else:
