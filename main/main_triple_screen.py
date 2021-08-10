@@ -86,6 +86,7 @@ if __name__ == '__main__':
         t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
         t_ready = datetime.now().replace(hour=9, minute=2, second=0, microsecond=0)
         t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
+        t_buy_end = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
         t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
         t_stock_end = datetime.now().replace(hour=15, minute=20, second=0, microsecond=0)
 
@@ -113,7 +114,7 @@ if __name__ == '__main__':
                     else:
                         continue
                 sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
-            elif t_start <= t_now < t_sell_start:
+            elif t_start <= t_now < t_buy_end:
                 if cur_min != old_min:
                     old_min = cur_min
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
@@ -216,6 +217,10 @@ if __name__ == '__main__':
                     elif (t_now.hour % 2) > 0:
                         is_notice = False
 
+            elif t_buy_end <= t_now < t_sell_start:
+                print("매도 대기중...")
+                time.sleep(5)
+
             elif t_sell_start <= t_now < t_stock_end:
                 bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                 for bought_stock in bought_list:
@@ -286,7 +291,7 @@ else:
         # =======================================
         sg.g_creon.init_cpBalance()  # 내 주식 정보 초기화
 
-        sg.g_day_start_assets_money = sg.g_cpBalance.GetHeaderValue(3) # 주식을 포함한 총 자산 금액 초기화(아침 시작기준)
+        sg.g_day_start_assets_money = sg.g_cpBalance.GetHeaderValue(3)  # 주식을 포함한 총 자산 금액 초기화(아침 시작기준)
         sg.g_day_start_pure_money = sg.g_creon.get_current_cash()  # 주식금액을 제외한 순수 현금자산 금액 초기화(아침 시작기준)
         total_cash = int(sg.g_day_start_pure_money)
         buy_stock_cash_p = sg.g_json_trading_config['buy_stock_cash'] / 100
@@ -316,11 +321,12 @@ else:
         else:
             atari_cash = can_use_cash // sg.g_buy_auto_stock_count_short
 
-        sg.g_logger.write_log(f"투자 비율 = {buy_stock_cash_p*100}%", log_lv=2, is_slacker=True)
+        sg.g_logger.write_log(f"투자 비율 = {buy_stock_cash_p * 100}%", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"투자 비율에 따른 전체 투자금 = {(can_use_cash):,.0f}", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"현재 사용할 수 있는 돈 = {(cur_can_use_cash):,.0f}", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"종목당 구매 할 돈 = {(atari_cash):,.0f}", log_lv=2, is_slacker=True)
-        sg.g_logger.write_log(f"현재 구매완료종목수/최대구매종목수 = {cur_bought_count}/{sg.g_buy_auto_stock_count_short}", log_lv=2, is_slacker=True)
+        sg.g_logger.write_log(f"현재 구매완료종목수/최대구매종목수 = {cur_bought_count}/{sg.g_buy_auto_stock_count_short}", log_lv=2,
+                              is_slacker=True)
 
         analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
         kau_list_all = sg.g_json_trading_config['buy_list']
@@ -329,6 +335,7 @@ else:
         t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
         t_ready = datetime.now().replace(hour=9, minute=2, second=0, microsecond=0)
         t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
+        t_buy_end = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
         t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
         t_stock_end = datetime.now().replace(hour=15, minute=20, second=0, microsecond=0)
 
@@ -356,26 +363,24 @@ else:
                     else:
                         continue
                 sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
-            elif t_start <= t_now < t_sell_start:
+            elif t_start <= t_now < t_buy_end:
                 if cur_min != old_min:
                     old_min = cur_min
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                     bought_count = len(bought_list)
                     if bought_count <= sg.g_buy_auto_stock_count_short:
                         if len(kau_list_plus) == 0:
-                            ii = 0
                             for stock_name in kau_list_all:
                                 stock_code = sg.g_market_db.get_stock_code(stock_name)
                                 if stock_code is not None:
                                     hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
                                     current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
-                                    print(f"(ii={ii})")
-                                    ii += 1
                                     if today_open < current_price:
                                         kau_list_plus.append(stock_name)
                                 else:
                                     continue
-                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
+                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
+                                                  is_slacker=True)
                         for stock_name in kau_list_plus:
                             stock_code = sg.g_market_db.get_stock_code(stock_name)
                             if stock_code is None:
@@ -388,11 +393,11 @@ else:
                                 continue
 
                             analysis_data_df_day = sg.g_market_db.get_past_stock_price(stock_code,
-                                                                                           analysis_data_amount_day,
-                                                                                           chart_type="D")
+                                                                                       analysis_data_amount_day,
+                                                                                       chart_type="D")
                             if analysis_data_df_day is None:
                                 sg.g_logger.write_log(f"{stock_code} analysis_data_df_min or day is None", log_lv=3,
-                                                          is_con_print=False)
+                                                      is_con_print=False)
                                 continue
 
                             limt_day_amount = (analysis_data_amount_day * 4) // 7
@@ -425,8 +430,8 @@ else:
                                 continue
 
                             is_buy = sg.g_ets.is_buy_sell(df_yester_day=analysis_series.iloc[-1],
-                                                  hennka_price=hennka_price,
-                                                  cur_price=current_price)
+                                                          hennka_price=hennka_price,
+                                                          cur_price=current_price)
                             if is_buy is True:
                                 # ============== 산다 ================
                                 is_buy_success = sg.g_creon.buy_stock(code=stock_code, money=atari_cash)
@@ -449,7 +454,8 @@ else:
                                 else:
                                     continue
                             is_pluse = True
-                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
+                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
+                                                  is_slacker=True)
                         elif (datetime.now().minute % 60) > 30:
                             is_pluse = False
 
@@ -459,6 +465,10 @@ else:
                         is_notice = True
                     elif (t_now.hour % 2) > 0:
                         is_notice = False
+
+            elif t_buy_end <= t_now < t_sell_start:
+                print("매도 대기중...")
+                time.sleep(5)
 
             elif t_sell_start <= t_now < t_stock_end:
                 bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
@@ -478,7 +488,7 @@ else:
                                               f"stock_code = {stock_code}\r\n"
                                               f"현재가 = {current_price}\r\n",
                                               f"돌파가격 = {hennka_price}\r\n",
-                                              f"현재가-돌파가격 = {current_price-hennka_price}\r\n",
+                                              f"현재가-돌파가격 = {current_price - hennka_price}\r\n",
                                               log_lv=2, is_slacker=True)
 
             elif t_stock_end <= t_now:
@@ -491,4 +501,5 @@ else:
                 time.sleep(5)
 
     except Exception as ex:
-        sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {str(ex)}", log_lv=5, is_slacker=True)
+        sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {str(ex)}", log_lv=5,
+                              is_slacker=True)
