@@ -165,8 +165,7 @@ class ElderTradeSystem:
             rieki_persent = df_day.rieki_persent
 
             if hennka_price < df_min['close'] and \
-               rieki_persent > rieki_persent_break and \
-               recent_not_rieki_count == 0 < recent_rieki_count:
+               recent_not_rieki_count == 0 and 2 < recent_rieki_count:
                 result = True
             else:
                 result = None
