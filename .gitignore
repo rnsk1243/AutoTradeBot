@@ -13,3 +13,6 @@ csv/
 xlsx/
 *.xlsx
 *.csv
+back_test_no_slow_d.bat
+99.back_test_notebook.bat
+venv/
