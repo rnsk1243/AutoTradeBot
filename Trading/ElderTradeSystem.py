@@ -61,12 +61,13 @@ class ElderTradeSystem:
         :return: df
         """
         try:
-            if df is None or len(df) <= 0:
-                return None
-
             rieki_persent = 0
             larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
             recent_rieki_count_day = sg.g_json_trading_config['recent_rieki_count_day']
+            recent_rieki_count_day_long = sg.g_json_trading_config['recent_rieki_count_day_long']
+
+            if df is None or len(df) <= recent_rieki_count_day_long:
+                return None
 
             df_shift = df.shift().dropna()
             hennka_price = df['open'] + ((df_shift['high'] - df_shift['low']) * larry_constant_K_anl)
@@ -80,6 +81,8 @@ class ElderTradeSystem:
             rieki_count = is_rieki.sum()
             recent_rieki_count = is_rieki.iloc[-recent_rieki_count_day:].sum()
             recent_not_rieki_count = is_not_rieki.iloc[-recent_rieki_count_day:].sum()
+            recent_rieki_count_long = is_rieki.iloc[-recent_rieki_count_day_long:].sum()
+            recent_not_rieki_count_long = is_not_rieki.iloc[-recent_rieki_count_day_long:].sum()
 
             hennka_kau_count = is_hennka_kau.sum()
             if hennka_kau_count > 0:
@@ -88,7 +91,9 @@ class ElderTradeSystem:
             df_analysis = df.iloc[[-1]].assign(hennka_price=hennka_price,
                                                rieki_persent=rieki_persent,
                                                recent_rieki_count=recent_rieki_count,
-                                               recent_not_rieki_count=recent_not_rieki_count).dropna()
+                                               recent_not_rieki_count=recent_not_rieki_count,
+                                               recent_rieki_count_long=recent_rieki_count_long,
+                                               recent_not_rieki_count_long=recent_not_rieki_count_long).dropna()
 
             return df_analysis
 
@@ -115,13 +120,16 @@ class ElderTradeSystem:
             if cur_h == 9 and cur_min < 5:
                 return None
             elif (cur_h == 9 and cur_min >= 5) or (9 < cur_h <= 14) or (cur_h == 14 and cur_min < 60):
-                # rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
-                # rieki_persent = df_yester_day.rieki_persent
+                min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
+
+                recent_rieki_count_long = df_yester_day.recent_rieki_count_long
+                recent_not_rieki_count_long = df_yester_day.recent_not_rieki_count_long
                 recent_not_rieki_count = df_yester_day.recent_not_rieki_count
                 recent_rieki_count = df_yester_day.recent_rieki_count
 
                 if hennka_price < cur_price < (hennka_price * 1.003) and \
-                   recent_not_rieki_count == 0 and 2 < recent_rieki_count:
+                   recent_not_rieki_count_long < recent_rieki_count_long and \
+                   recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count:
                     result = True
                 else:
                     result = None
@@ -137,7 +145,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
             return None
 
-    def is_buy_sell_nomal(self, df_day, df_min, df_today, name, rieki_persent_break):
+    def is_buy_sell_nomal(self, df_day, df_min, df_today):
         """
         株を買うか売るか見守るか選択
         :param df_day:
@@ -156,15 +164,19 @@ class ElderTradeSystem:
                 # print(f"{df_min['date'].day}일 장 종료")
                 return False
 
+            min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
             larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
             hennka_price = df_today.open + ((df_day.high - df_day.low) * larry_constant_K_buy)
 
             recent_rieki_count = df_day.recent_rieki_count
             recent_not_rieki_count = df_day.recent_not_rieki_count
-            rieki_persent = df_day.rieki_persent
+            recent_rieki_count_long = df_day.recent_rieki_count_long
+            recent_not_rieki_count_long = df_day.recent_not_rieki_count_long
+            # rieki_persent = df_day.rieki_persent
 
             if hennka_price < df_min['close'] and \
-               recent_not_rieki_count == 0 and 2 < recent_rieki_count:
+               recent_not_rieki_count_long < recent_rieki_count_long and \
+               recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count:
                 result = True
             else:
                 result = None

@@ -1,11 +1,13 @@
 {
   "buy_stock_cash": 20,
   "buy_auto_stock_count_short": 3,
-  "analysis_data_amount_day": 180,
+  "analysis_data_amount_day": 2221,
   "larry_constant_K_anl": 0.53,
   "larry_constant_K_buy": 0.45,
   "rieki_persent_break": 59,
-  "recent_rieki_count_day": 5,
+  "recent_rieki_count_day": 1,
+  "recent_rieki_count_day_long": 500,
+  "min_rieki_amount": 1,
   "test_list1": [
     "네이처셀",
     "NAVER",

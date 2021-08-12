@@ -24,8 +24,8 @@ buy_persent = 90
 money = 10000000
 # test_target_stock_list = sg.g_json_trading_config['test_list1']
 # test_target_stock_list = sg.g_json_trading_config['bought_list']
-# test_target_stock_list = sg.g_json_trading_config['buy_list']
-test_target_stock_list = sg.g_json_trading_config['all_list']
+test_target_stock_list = sg.g_json_trading_config['buy_list']
+# test_target_stock_list = sg.g_json_trading_config['all_list']
 # test_target_stock_list = list(sg.g_market_db.get_stock_info_all().values())
 test_stock_amount = len(test_target_stock_list)
 comp_count = 0
@@ -36,7 +36,7 @@ analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
 kau_list = sg.g_json_trading_config['buy_list']
 larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
 rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
-test_days = 10  # day
+test_days = 5  # day
 is_graph = False
 is_graph_code = '네이처셀'
 cur_stock_name = ""
@@ -44,10 +44,10 @@ cur_stock_name = ""
 algori = "if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day\
                     and slow_d_day < slow_d_buy and slow_d_m < slow_d_buy"
 
-sg.g_logger.write_log(f"\tanalysis_data_amount_day\t{analysis_data_amount_day}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\tlarry_constant_K_anl\t{larry_constant_K_anl}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\trieki_persent_break\t{rieki_persent_break}\t", log_lv=2, is_con_print=False)
-sg.g_logger.write_log(f"\t{algori}\t\t", log_lv=2, is_con_print=False)
+# sg.g_logger.write_log(f"\tanalysis_data_amount_day\t{analysis_data_amount_day}\t", log_lv=2, is_con_print=False)
+# sg.g_logger.write_log(f"\tlarry_constant_K_anl\t{larry_constant_K_anl}\t", log_lv=2, is_con_print=False)
+# sg.g_logger.write_log(f"\trieki_persent_break\t{rieki_persent_break}\t", log_lv=2, is_con_print=False)
+# sg.g_logger.write_log(f"\t{algori}\t\t", log_lv=2, is_con_print=False)
 
 def make_test_data(df, chart):
 
@@ -84,14 +84,16 @@ def make_test_data(df, chart):
         #     sg.g_logger.write_log(f"\ttest기간\t{kurikai}\t\t", log_lv=2, is_con_print=False)
         #     is_print = True
         analysis_data = df[df['date'] <= last_time - timedelta(days=test_days)]
+        if analysis_data is None or len(analysis_data) == 0:
+            return None
         arg4_analysis_data_amount_day = analysis_data_amount_day
         analysis_data = analysis_data[analysis_data.iloc[-1].date - timedelta(days=arg4_analysis_data_amount_day) < analysis_data['date']]
         analysis_data_amount = len(analysis_data)
 
-        analysis_amount = (arg4_analysis_data_amount_day * 9) // 14  # 14일중에 9일이 개장
-        if kurikai < 0 or analysis_data_amount < analysis_amount:
-            sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
-            return None
+        # analysis_amount = (arg4_analysis_data_amount_day * 9) // 14  # 14일중에 9일이 개장
+        # if kurikai < 0 or analysis_data_amount < analysis_amount:
+        #     sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
+        #     return None
     else:
         return None
     try:
@@ -100,11 +102,11 @@ def make_test_data(df, chart):
             df_back_data = df[i - (analysis_data_amount + kurikai):i - kurikai]
             # df_back_data = df[i - (analysis_data_amount + kurikai):i - kurikai - analysis_data_amount + 30]
             # sg.g_logger.write_log(f"\t{i}\t{df_back_data.iloc[0].date}\t{df_back_data.iloc[-1].date}\t", is_con_print=False, log_lv=2)
-            df_back_data_len = len(df_back_data)
+            # df_back_data_len = len(df_back_data)
 
-            if df_back_data_len < analysis_amount:
-                sg.g_logger.write_log(f"{stock_name} : data / {analysis_amount-df_back_data_len} 적음", log_lv=3)
-                return None
+            # if df_back_data_len < analysis_amount:
+            #     sg.g_logger.write_log(f"{stock_name} : data / {analysis_amount-df_back_data_len} 적음", log_lv=3)
+            #     return None
 
             # print(f"data amount = {len(df_back_data)}")
             analysis_series = sg.g_ets.get_macd_stochastic(df_back_data)
@@ -122,14 +124,16 @@ def make_test_data(df, chart):
 if __name__ == '__main__':
     try:
         args = sys.argv
-        kuriae = int(args[1])
-        arg4_min_rieki = int(args[2])
-        arg5_max_rieki = int(args[3])
+        kuriae = 2
+        # arg4_min_rieki = int(args[2])
+        # arg5_max_rieki = int(args[3])
         arg6_analysis_data_amount_day = analysis_data_amount_day
         print(f"kuriae : {kuriae}")
-        print(f"rieki : {arg4_min_rieki}～{arg5_max_rieki}")
+        # print(f"rieki : {arg4_min_rieki}～{arg5_max_rieki}")
         is_analysis_random = False
         recent_rieki_count_day = sg.g_json_trading_config['recent_rieki_count_day']
+        recent_rieki_count_day_long = sg.g_json_trading_config['recent_rieki_count_day_long']
+        min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
 
         # folder 作成
         if arg6_analysis_data_amount_day == -1:
@@ -145,7 +149,7 @@ if __name__ == '__main__':
         xlsx_analysis = pd.DataFrame()
 
         for i in range(1, kuriae):
-            rieki_persent_break = random.randint(arg4_min_rieki, arg5_max_rieki)
+            # rieki_persent_break = random.randint(arg4_min_rieki, arg5_max_rieki)
             larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
             larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
 
@@ -161,8 +165,8 @@ if __name__ == '__main__':
             for stock_code in test_target_stock_list:
                 stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
                 cur_stock_name = stock_name
-                df_min = sg.g_market_db.get_past_stock_price(stock_code, 100)
-                df_day = sg.g_market_db.get_past_stock_price(stock_code, 500, chart_type="D")
+                df_min = sg.g_market_db.get_past_stock_price(stock_code, 50)
+                df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day, chart_type="D")
 
                 df_data_day = make_test_data(df_day, 1)
                 if df_data_day is None:
@@ -178,8 +182,8 @@ if __name__ == '__main__':
                 back_test_arg_list.append(sg.g_ets)
                 back_test_arg_list.append(df_data_min)
                 back_test_arg_list.append(df_data_day)
-                back_test_arg_list.append(stock_name)
-                back_test_arg_list.append(rieki_persent_break)
+                # back_test_arg_list.append(stock_name)
+                # back_test_arg_list.append(rieki_persent_break)
 
                 data = bter.feeds.PandasData(dataname=df_data_min)
 
@@ -249,7 +253,9 @@ if __name__ == '__main__':
                                                   "수익누계평균": cumulative_benefit_ave,
                                                   "이득확률": bene_pro,
                                                   "수익평균": syueki,
-                                                  "recent_rieki_count_day": recent_rieki_count_day}, ignore_index=True)
+                                                  "recent_rieki_count_day_long": recent_rieki_count_day_long,
+                                                  "recent_rieki_count_day": recent_rieki_count_day,
+                                                  "min_rieki_amount": min_rieki_amount}, ignore_index=True)
 
             xlsx_analysis.to_excel(f"{path_xlsx}{folder_name}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과.xlsx",
                                    sheet_name=f'결과')
@@ -266,8 +272,8 @@ else:
 
         for stock_code in test_target_stock_list:
             stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
-            df_min = sg.g_market_db.get_past_stock_price(stock_code, 360)
-            df_day = sg.g_market_db.get_past_stock_price(stock_code, 720, chart_type="D")
+            df_min = sg.g_market_db.get_past_stock_price(stock_code, 50)
+            df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day, chart_type="D")
 
             df_data_day = make_test_data(df_day, 1)
             if df_data_day is None:

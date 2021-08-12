@@ -150,19 +150,11 @@ if __name__ == '__main__':
                                 sg.g_logger.write_log(f"{stock_code} analysis_data_df_min or day is None", log_lv=3,
                                                       is_con_print=False)
                                 continue
-
-                            limt_day_amount = (analysis_data_amount_day * 4) // 7
-
-                            if len(analysis_data_df_day) < limt_day_amount:
-                                sg.g_logger.write_log(f"{stock_code} >> data amount = \r\n"
-                                                      f"day:{len(analysis_data_df_day)}\r\n"
-                                                      f"continue", log_lv=3)
-                                continue
                             # 살까 말까 계산 처리
                             sg.g_logger.write_log(f"\r\n\t【{stock_name}】...살까 말까 계산 처리...\r\n", log_lv=2)
                             # ===========================
                             analysis_series = sg.g_ets.get_macd_stochastic(df=analysis_data_df_day)
-                            if len(analysis_series) == 0:
+                            if analysis_series is None or len(analysis_series) == 0:
                                 sg.g_logger.write_log(
                                     f"{stock_code} / analysis_series get_macd_stochastic의 리턴값이 len = 0"
                                     f" \r\n 거래 정지 되었던 주식일지도?", log_lv=3,
@@ -206,7 +198,7 @@ if __name__ == '__main__':
                                     continue
                             is_pluse = True
                             sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
-                                                  is_slacker=True)
+                                                  is_slacker=False)
                         elif (datetime.now().minute % 60) > 30:
                             is_pluse = False
                     else:
@@ -347,7 +339,6 @@ else:
         is_notice = False
         is_pluse = False
         today_hennka_prices = {}
-        stock_code = None
         while True:
             t_now = datetime.now()
             cur_min = t_now.minute
@@ -404,19 +395,11 @@ else:
                                 sg.g_logger.write_log(f"{stock_code} analysis_data_df_min or day is None", log_lv=3,
                                                       is_con_print=False)
                                 continue
-
-                            limt_day_amount = (analysis_data_amount_day * 4) // 7
-
-                            if len(analysis_data_df_day) < limt_day_amount:
-                                sg.g_logger.write_log(f"{stock_code} >> data amount = \r\n"
-                                                      f"day:{len(analysis_data_df_day)}\r\n"
-                                                      f"continue", log_lv=3)
-                                continue
                             # 살까 말까 계산 처리
                             sg.g_logger.write_log(f"\r\n\t【{stock_name}】...살까 말까 계산 처리...\r\n", log_lv=2)
                             # ===========================
                             analysis_series = sg.g_ets.get_macd_stochastic(df=analysis_data_df_day)
-                            if len(analysis_series) == 0:
+                            if analysis_series is None or len(analysis_series) == 0:
                                 sg.g_logger.write_log(
                                     f"{stock_code} / analysis_series get_macd_stochastic의 리턴값이 len = 0"
                                     f" \r\n 거래 정지 되었던 주식일지도?", log_lv=3,
@@ -460,9 +443,12 @@ else:
                                     continue
                             is_pluse = True
                             sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
-                                                  is_slacker=True)
+                                                  is_slacker=False)
                         elif (datetime.now().minute % 60) > 30:
                             is_pluse = False
+                    else:
+                        sg.g_logger.write_log(f"\t구매 개수 제한에 걸림... : {bought_count}개\t", log_lv=2,
+                                              is_slacker=False)
 
                     # 2시간마다 알림
                     if (t_now.hour % 2) == 0 and is_notice is False:
@@ -489,8 +475,9 @@ else:
                     if is_sell_success is True:
                         current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
                         bought_list = sg.g_creon.get_bought_stock_list()
+                        stock_name_sell = sg.g_market_db.get_stock_name(stock_code)
                         sg.g_logger.write_log(f"매도 했습니다.\r\n"
-                                              f"stock_code = {stock_code}\r\n"
+                                              f"이름 = {stock_name_sell}\r\n"
                                               f"현재가 = {current_price}\r\n"
                                               f"돌파가격 = {hennka_price}\r\n"
                                               f"현재가-돌파가격 = {current_price - hennka_price}\r\n",
@@ -506,7 +493,5 @@ else:
                 time.sleep(5)
 
     except Exception as ex:
-        sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {stock_code}", log_lv=5,
-                              is_slacker=True)
         sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {str(ex)}", log_lv=5,
                               is_slacker=True)
