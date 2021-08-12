@@ -111,7 +111,7 @@ class Creon:
             return
 
         today_benefit = current_benefit - sg.g_day_start_assets_money
-        if today_benefit != 0:
+        if sg.g_day_start_assets_money != 0:
             today_benefit_per = round((today_benefit / sg.g_day_start_assets_money) * 100, 2)
         else:
             today_benefit_per = 0

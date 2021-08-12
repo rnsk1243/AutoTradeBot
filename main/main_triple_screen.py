@@ -94,6 +94,7 @@ if __name__ == '__main__':
         is_notice = False
         is_pluse = False
         today_hennka_prices = {}
+        stock_code = None
         while True:
             t_now = datetime.now()
             cur_min = t_now.minute
@@ -252,6 +253,8 @@ if __name__ == '__main__':
                 time.sleep(5)
 
     except Exception as ex:
+        sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {stock_code}", log_lv=5,
+                              is_slacker=True)
         sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {str(ex)}", log_lv=5,
                               is_slacker=True)
 
@@ -343,6 +346,7 @@ else:
         is_notice = False
         is_pluse = False
         today_hennka_prices = {}
+        stock_code = None
         while True:
             t_now = datetime.now()
             cur_min = t_now.minute
@@ -501,5 +505,7 @@ else:
                 time.sleep(5)
 
     except Exception as ex:
+        sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {stock_code}", log_lv=5,
+                              is_slacker=True)
         sg.g_logger.write_log(f"Exception occured triple screen __name__ python console: {str(ex)}", log_lv=5,
                               is_slacker=True)
