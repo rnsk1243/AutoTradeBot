@@ -120,7 +120,7 @@ if __name__ == '__main__':
                     old_min = cur_min
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                     bought_count = len(bought_list)
-                    if bought_count <= sg.g_buy_auto_stock_count_short:
+                    if bought_count < sg.g_buy_auto_stock_count_short:
                         if len(kau_list_plus) == 0:
                             for stock_name in kau_list_all:
                                 stock_code = sg.g_market_db.get_stock_code(stock_name)
@@ -210,6 +210,9 @@ if __name__ == '__main__':
                                                   is_slacker=True)
                         elif (datetime.now().minute % 60) > 30:
                             is_pluse = False
+                    else:
+                        sg.g_logger.write_log(f"\t구매 개수 제한에 걸림... : {bought_count}개\t", log_lv=2,
+                                              is_slacker=False)
 
                     # 2시간마다 알림
                     if (t_now.hour % 2) == 0 and is_notice is False:
@@ -372,7 +375,7 @@ else:
                     old_min = cur_min
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                     bought_count = len(bought_list)
-                    if bought_count <= sg.g_buy_auto_stock_count_short:
+                    if bought_count < sg.g_buy_auto_stock_count_short:
                         if len(kau_list_plus) == 0:
                             for stock_name in kau_list_all:
                                 stock_code = sg.g_market_db.get_stock_code(stock_name)
