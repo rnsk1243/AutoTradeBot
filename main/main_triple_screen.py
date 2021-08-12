@@ -238,8 +238,9 @@ if __name__ == '__main__':
                     if is_sell_success is True:
                         current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
                         bought_list = sg.g_creon.get_bought_stock_list()
+                        stock_name_sell = sg.g_market_db.get_stock_name(stock_code)
                         sg.g_logger.write_log(f"매도 했습니다.\r\n"
-                                              f"stock_code = {stock_code}\r\n"
+                                              f"이름 = {stock_name_sell}\r\n"
                                               f"현재가 = {current_price}\r\n"
                                               f"돌파가격 = {hennka_price}\r\n"
                                               f"현재가-돌파가격 = {current_price - hennka_price}\r\n",
