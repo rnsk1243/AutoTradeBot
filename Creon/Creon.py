@@ -102,19 +102,23 @@ class Creon:
             self.__check_and_wait(LT_NONTRADE_REQUEST)  # 要請可能か？チェック
             self.init_cpBalance()
 
-            current_benefit = sg.g_cpBalance.GetHeaderValue(3)
             bought_stock_count = sg.g_cpBalance.GetHeaderValue(7)
+            buy_stock_count = sg.g_buy_auto_stock_count_short
+            start_pure_money = sg.g_day_start_pure_money
 
             if bought_stock_count == 0:
-                sg.g_logger.write_log(f"評価金額: {(current_benefit):,.0f}", log_lv=2, is_slacker=is_slacker,
-                                      is_con_print=False)
                 sg.g_logger.write_log(f"株種類数: {str(bought_stock_count)}", log_lv=2, is_slacker=is_slacker,
                                       is_con_print=False)
                 return
+            if start_pure_money == 0:
+                sg.g_logger.write_log(f"순수가진금액: {str(start_pure_money)}", log_lv=2, is_slacker=is_slacker,
+                                      is_con_print=False)
+                return
 
-            today_benefit = current_benefit - sg.g_day_start_assets_money
-            if sg.g_day_start_assets_money != 0:
-                today_benefit_per = round((today_benefit / sg.g_day_start_assets_money) * 100, 2)
+            current_benefit = sg.g_cpBalance.GetHeaderValue(3)
+            today_benefit = current_benefit - start_pure_money
+            if start_pure_money != 0:
+                today_benefit_per = round((today_benefit / start_pure_money) * 100, 2)
             else:
                 today_benefit_per = 0
             # sg.g_logger.write_log("↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓", log_lv=2, is_slacker=True, is_con_print=False)
@@ -123,9 +127,9 @@ class Creon:
             sg.g_logger.write_log(f"評価金額: {(current_benefit):,.0f}", log_lv=2, is_slacker=is_slacker,
                                   is_con_print=False)
             # sg.g_logger.write_log(f"評価損益: {(sg.g_cpBalance.GetHeaderValue(4)):,.0f}", log_lv=2, is_slacker=is_slacker, is_con_print=False)
-            sg.g_logger.write_log(f"株種類数: {str(bought_stock_count)}", log_lv=2, is_slacker=is_slacker,
+            sg.g_logger.write_log(f"買収株数: {str(bought_stock_count)}　/ 【{str(buy_stock_count)}個】", log_lv=2, is_slacker=is_slacker,
                                   is_con_print=False)
-            sg.g_logger.write_log(f"本日の利益率: {(today_benefit):,.0f} / 【{today_benefit_per}%】", log_lv=2,
+            sg.g_logger.write_log(f"利益率: {(today_benefit):,.0f} / 【{today_benefit_per}%】", log_lv=2,
                                   is_slacker=is_slacker, is_con_print=False)
             # sg.g_logger.write_log("↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑", log_lv=2, is_slacker=True, is_con_print=False)
             return

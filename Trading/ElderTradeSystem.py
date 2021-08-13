@@ -71,10 +71,15 @@ class ElderTradeSystem:
 
             df_shift = df.shift().dropna()
             hennka_price = df['open'] + ((df_shift['high'] - df_shift['low']) * larry_constant_K_anl)
+            hennka_price_pulse = ((df_shift['high'] - df_shift['low']) * larry_constant_K_anl)
+            df = df.assign(hennka_price=hennka_price)
+            df = df.assign(hennka_price_pulse=hennka_price_pulse)
+            df = df.dropna()
+            df = df[df['hennka_price_pulse'] > 0]
 
-            is_hennka_kau = hennka_price < df['high']
-            is_hennka_rieki = hennka_price < df['close']
-            is_hennka_not_rieki = hennka_price >= df['close']
+            is_hennka_kau = df['hennka_price'] < df['high']
+            is_hennka_rieki = df['hennka_price'] < df['close']
+            is_hennka_not_rieki = df['hennka_price'] >= df['close']
 
             is_rieki = is_hennka_kau & is_hennka_rieki
             is_not_rieki = is_hennka_kau & is_hennka_not_rieki
@@ -83,13 +88,11 @@ class ElderTradeSystem:
             recent_not_rieki_count = is_not_rieki.iloc[-recent_rieki_count_day:].sum()
             recent_rieki_count_long = is_rieki.iloc[-recent_rieki_count_day_long:].sum()
             recent_not_rieki_count_long = is_not_rieki.iloc[-recent_rieki_count_day_long:].sum()
-
             hennka_kau_count = is_hennka_kau.sum()
             if hennka_kau_count > 0:
                 rieki_persent = round((rieki_count / hennka_kau_count) * 100)
 
-            df_analysis = df.iloc[[-1]].assign(hennka_price=hennka_price,
-                                               rieki_persent=rieki_persent,
+            df_analysis = df.iloc[[-1]].assign(rieki_persent=rieki_persent,
                                                recent_rieki_count=recent_rieki_count,
                                                recent_not_rieki_count=recent_not_rieki_count,
                                                recent_rieki_count_long=recent_rieki_count_long,
@@ -109,7 +112,7 @@ class ElderTradeSystem:
         :return: タプル(True=買う,False=売る,None=見守る／点数=高いほど買う)
         """
         try:
-            if df_yester_day is None:
+            if df_yester_day is None or len(df_yester_day) <= 0:
                 self.__logger.write_log(f"is_buy_sell // df_yester_day is None", log_lv=3)
                 return None
 

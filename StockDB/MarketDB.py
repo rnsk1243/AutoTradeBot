@@ -110,41 +110,43 @@ class MarketDB:
         """
         if df is None:
             return None
-        if 'up_down' in df.columns:
-            for row in df.itertuples(name='stock'):
-                if np.absolute(row.up_down) > 30:  # 変化率30％超えたか
-                    stock_code = self.get_stock_code(stock_name=stock_name)
-                    if stock_code is None:
-                        sg.g_logger.write_log(f"株価異常です。株名前：{stock_name} "
-                                              f"内容：【{row}】"
-                                              f"/ json追記失敗（株名前異常）", log_lv=4)
-                        return False
-                    try:
-                        with open(sg.g_path_update_price_stock_config_json, 'r', encoding='utf-8') as upsc_json:
-                            upsc = json.load(upsc_json)
-                            def_val = self.__set_search_default(chart_type=chart_type)
-                            method_name = def_val[3]
-                            update_stock_list = upsc[method_name]['update_stock_list']
-                            update_stock_list.append(stock_code)
-                            upsc[method_name]['update_stock_list'] = update_stock_list
-
-                        with open(sg.g_path_update_price_stock_config_json, 'w', encoding='utf-8') as w_upsc_json:
-                            json.dump(upsc, w_upsc_json, indent="\t")
-                            sg.g_logger.write_log(f"株価異常です。株名前：{stock_name} "
-                                                    f"内容：【{row}】"
-                                                    f"json追記完了", log_lv=3)
-                            return False
-                    except FileNotFoundError as e:
-                        sg.g_logger.write_log(f"update_price_stock_configファイルを見つかりません。 {str(e)}", log_lv=4)
-
-                    except Exception as e:
-                        sg.g_logger.write_log(f"Exception occured check_stock_price : {str(e)}", log_lv=5)
-                        return False
-            # sg.g_logger.write_log(f"株価正常 株名前：{stock_name}、chart区分：{chart_type}", log_lv=1)
-            return True
         else:
-            sg.g_logger.write_log(f"up_downカラムが無いので、株価チェックできない。", log_lv=3)
-            return None
+            return True
+        # if 'up_down' in df.columns:
+        #     for row in df.itertuples(name='stock'):
+        #         if np.absolute(row.up_down) > 30:  # 変化率30％超えたか
+        #             stock_code = self.get_stock_code(stock_name=stock_name)
+        #             if stock_code is None:
+        #                 sg.g_logger.write_log(f"株価異常です。株名前：{stock_name} "
+        #                                       f"内容：【{row}】"
+        #                                       f"/ json追記失敗（株名前異常）", log_lv=4)
+        #                 return False
+        #             try:
+        #                 with open(sg.g_path_update_price_stock_config_json, 'r', encoding='utf-8') as upsc_json:
+        #                     upsc = json.load(upsc_json)
+        #                     def_val = self.__set_search_default(chart_type=chart_type)
+        #                     method_name = def_val[3]
+        #                     update_stock_list = upsc[method_name]['update_stock_list']
+        #                     update_stock_list.append(stock_code)
+        #                     upsc[method_name]['update_stock_list'] = update_stock_list
+        #
+        #                 with open(sg.g_path_update_price_stock_config_json, 'w', encoding='utf-8') as w_upsc_json:
+        #                     json.dump(upsc, w_upsc_json, indent="\t")
+        #                     sg.g_logger.write_log(f"株価異常です。株名前：{stock_name} "
+        #                                             f"内容：【{row}】"
+        #                                             f"json追記完了", log_lv=3)
+        #                     return False
+        #             except FileNotFoundError as e:
+        #                 sg.g_logger.write_log(f"update_price_stock_configファイルを見つかりません。 {str(e)}", log_lv=4)
+        #
+        #             except Exception as e:
+        #                 sg.g_logger.write_log(f"Exception occured check_stock_price : {str(e)}", log_lv=5)
+        #                 return False
+        #     # sg.g_logger.write_log(f"株価正常 株名前：{stock_name}、chart区分：{chart_type}", log_lv=1)
+        #     return True
+        # else:
+        #     sg.g_logger.write_log(f"up_downカラムが無いので、株価チェックできない。", log_lv=3)
+        #     return None
 
     def get_stock_name(self, stock_code):
         """

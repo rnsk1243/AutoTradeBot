@@ -48,7 +48,7 @@ if __name__ == '__main__':
         buy_stock_cash_p = sg.g_json_trading_config['buy_stock_cash'] / 100
 
         cur_bought_count = sg.g_cpBalance.GetHeaderValue(7)  # 구매한 종목 수
-        sg.g_creon.notice_current_status(is_slacker=True)
+        # sg.g_creon.notice_current_status(is_slacker=True)
 
         if cur_bought_count > 0:
             can_use_cash = sg.g_day_start_assets_money * buy_stock_cash_p
@@ -79,12 +79,45 @@ if __name__ == '__main__':
         sg.g_logger.write_log(f"현재 구매완료종목수/최대구매종목수 = {cur_bought_count}/{sg.g_buy_auto_stock_count_short}", log_lv=2,
                               is_slacker=True)
 
+        buy_list = sg.g_json_trading_config['buy_list']
         analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
-        kau_list_all = sg.g_json_trading_config['buy_list']
-        kau_list_plus = []
+        min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
+        kau_list_zenjitu_rieki = []
+        try:
+            for stock_name in buy_list:
+                stock_code = sg.g_market_db.get_stock_code(stock_name)
+                if stock_code is not None:
+                    analysis_data_df_day = sg.g_market_db.get_past_stock_price(stock_code,
+                                                                               analysis_data_amount_day,
+                                                                               chart_type="D")
+                    if analysis_data_df_day is not None:
+                        analysis_series = sg.g_ets.get_macd_stochastic(df=analysis_data_df_day)
+                        if analysis_series is not None and len(analysis_series) > 0:
+                            recent_rieki_count_long = analysis_series.iloc[-1].recent_rieki_count_long
+                            recent_not_rieki_count_long = analysis_series.iloc[-1].recent_not_rieki_count_long
+                            recent_not_rieki_count = analysis_series.iloc[-1].recent_not_rieki_count
+                            recent_rieki_count = analysis_series.iloc[-1].recent_rieki_count
+                            if recent_not_rieki_count_long < recent_rieki_count_long and \
+                                    recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count:
+                                kau_list_zenjitu_rieki.append(stock_name)
+                        else:
+                            sg.g_logger.write_log(f"analysis_series 분석 실패 ：{stock_name}", log_lv=3,
+                                                  is_slacker=False)
+                else:
+                    sg.g_logger.write_log(f"stock_code 검색 실패 ：{stock_name}", log_lv=3,
+                                          is_slacker=False)
+        except Exception as ex:
+            sg.g_logger.write_log(f"Exception occured triple screen 종목 초기화 실패 프로그램 종료.: {str(ex)}",
+                                  log_lv=5,
+                                  is_slacker=True)
+
+        if len(kau_list_zenjitu_rieki) > 0:
+            sg.g_logger.write_log(f"금일 살만한 주식 : {len(kau_list_zenjitu_rieki)} 개\r\n{kau_list_zenjitu_rieki}\r\n", log_lv=2, is_slacker=True)
+        elif len(kau_list_zenjitu_rieki) <= 0:
+            sg.g_logger.write_log(f"금일 살만한 주식을 찾을 수 없음. 프로그램 종료.", log_lv=2, is_slacker=True)
+            sys.exit(0)
 
         t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
-        t_ready = datetime.now().replace(hour=9, minute=2, second=0, microsecond=0)
         t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
         t_buy_end = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
         t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
@@ -92,47 +125,20 @@ if __name__ == '__main__':
 
         old_min = -1
         is_notice = False
-        is_pluse = False
         today_hennka_prices = {}
         while True:
             t_now = datetime.now()
             cur_min = t_now.minute
-            if t_taiki <= t_now < t_ready:
+            if t_taiki <= t_now < t_start:
                 time.sleep(1)
                 print("--떡상 기원--")
-
-            elif t_ready <= t_now < t_start:
-                kau_list_plus = []
-                for stock_name in kau_list_all:
-                    stock_code = sg.g_market_db.get_stock_code(stock_name)
-                    if stock_code is not None:
-                        hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
-                        today_hennka_prices[stock_code] = hennka_price
-                        current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
-                        if today_open < current_price:
-                            kau_list_plus.append(stock_name)
-                    else:
-                        continue
-                sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
             elif t_start <= t_now < t_buy_end:
                 if cur_min != old_min:
                     old_min = cur_min
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                     bought_count = len(bought_list)
                     if bought_count < sg.g_buy_auto_stock_count_short:
-                        if len(kau_list_plus) == 0:
-                            for stock_name in kau_list_all:
-                                stock_code = sg.g_market_db.get_stock_code(stock_name)
-                                if stock_code is not None:
-                                    hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
-                                    current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
-                                    if today_open < current_price:
-                                        kau_list_plus.append(stock_name)
-                                else:
-                                    continue
-                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
-                                                  is_slacker=True)
-                        for stock_name in kau_list_plus:
+                        for stock_name in kau_list_zenjitu_rieki:
                             stock_code = sg.g_market_db.get_stock_code(stock_name)
                             if stock_code is None:
                                 sg.g_logger.write_log(f"종목코드 못 불러옴:{stock_name}", log_lv=3)
@@ -182,25 +188,8 @@ if __name__ == '__main__':
                                 sg.g_logger.write_log(f"매도 하기위해 for문을 빠져나옵니다.", log_lv=2, is_slacker=True)
                                 break  # 매도 하기위해 for문을 빠져나옴
                             else:
-                                # sg.g_logger.write_log(f"{stock_name}====살까 말까 계산 처리...E N D", log_lv=2)
+                                # sg.g_logger.write_log(f"{stock_name}====is_buy_sell 실패.", log_lv=2)
                                 continue
-
-                        if ((datetime.now().minute % 60) <= 30) and is_pluse is False:
-                            kau_list_plus = []
-                            for stock_name in kau_list_all:
-                                stock_code = sg.g_market_db.get_stock_code(stock_name)
-                                if stock_code is not None:
-                                    hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
-                                    current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
-                                    if today_open < current_price:
-                                        kau_list_plus.append(stock_name)
-                                else:
-                                    continue
-                            is_pluse = True
-                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
-                                                  is_slacker=False)
-                        elif (datetime.now().minute % 60) > 30:
-                            is_pluse = False
                     else:
                         sg.g_logger.write_log(f"\t구매 개수 제한에 걸림... : {bought_count}개\t", log_lv=2,
                                               is_slacker=False)
@@ -233,13 +222,12 @@ if __name__ == '__main__':
                         stock_name_sell = sg.g_market_db.get_stock_name(stock_code)
                         sg.g_logger.write_log(f"매도 했습니다.\r\n"
                                               f"이름 = {stock_name_sell}\r\n"
-                                              f"현재가 = {current_price}\r\n"
-                                              f"돌파가격 = {hennka_price}\r\n"
-                                              f"현재가-돌파가격 = {current_price - hennka_price}\r\n",
+                                              f"현재가 = {(current_price):,.0f}\r\n"
+                                              f"돌파가격 = {(hennka_price):,.0f}\r\n"
+                                              f"현재가-돌파가격 = {(current_price - hennka_price):,.0f}\r\n",
                                               log_lv=2, is_slacker=True)
 
             elif t_stock_end <= t_now:
-                sg.g_creon.notice_current_status(is_slacker=True)
                 sg.g_logger.write_log(f"오늘의 주식거래 종료", log_lv=2, is_slacker=True)
                 # =======================================
                 sys.exit(0)
@@ -267,10 +255,10 @@ else:
         else:
             sg.g_logger.write_log(f"実行ブランチ名：{branch_name}", log_lv=2, is_slacker=True)
         # =======================================
-        today = datetime.today().weekday()
-        if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
-            sg.g_logger.write_log(f"本日は土日または日曜なので株取引プログラムを終了します。", log_lv=2, is_slacker=True)
-            sys.exit(0)
+        # today = datetime.today().weekday()
+        # if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
+        #     sg.g_logger.write_log(f"本日は土日または日曜なので株取引プログラムを終了します。", log_lv=2, is_slacker=True)
+        #     sys.exit(0)
         # =======================================
         is_login_success = False
         try:
@@ -293,7 +281,7 @@ else:
         buy_stock_cash_p = sg.g_json_trading_config['buy_stock_cash'] / 100
 
         cur_bought_count = sg.g_cpBalance.GetHeaderValue(7)  # 구매한 종목 수
-        sg.g_creon.notice_current_status(is_slacker=True)
+        # sg.g_creon.notice_current_status(is_slacker=True)
 
         if cur_bought_count > 0:
             can_use_cash = sg.g_day_start_assets_money * buy_stock_cash_p
@@ -324,12 +312,45 @@ else:
         sg.g_logger.write_log(f"현재 구매완료종목수/최대구매종목수 = {cur_bought_count}/{sg.g_buy_auto_stock_count_short}", log_lv=2,
                               is_slacker=True)
 
+        buy_list = sg.g_json_trading_config['buy_list']
         analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
-        kau_list_all = sg.g_json_trading_config['buy_list']
-        kau_list_plus = []
+        min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
+        kau_list_zenjitu_rieki = []
+        try:
+            for stock_name in buy_list:
+                stock_code = sg.g_market_db.get_stock_code(stock_name)
+                if stock_code is not None:
+                    analysis_data_df_day = sg.g_market_db.get_past_stock_price(stock_code,
+                                                                               analysis_data_amount_day,
+                                                                               chart_type="D")
+                    if analysis_data_df_day is not None:
+                        analysis_series = sg.g_ets.get_macd_stochastic(df=analysis_data_df_day)
+                        if analysis_series is not None and len(analysis_series) > 0:
+                            recent_rieki_count_long = analysis_series.iloc[-1].recent_rieki_count_long
+                            recent_not_rieki_count_long = analysis_series.iloc[-1].recent_not_rieki_count_long
+                            recent_not_rieki_count = analysis_series.iloc[-1].recent_not_rieki_count
+                            recent_rieki_count = analysis_series.iloc[-1].recent_rieki_count
+                            if recent_not_rieki_count_long < recent_rieki_count_long and \
+                                    recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count:
+                                kau_list_zenjitu_rieki.append(stock_name)
+                        else:
+                            sg.g_logger.write_log(f"analysis_series 분석 실패 ：{stock_name}", log_lv=3,
+                                                  is_slacker=False)
+                else:
+                    sg.g_logger.write_log(f"stock_code 검색 실패 ：{stock_name}", log_lv=3,
+                                          is_slacker=False)
+        except Exception as ex:
+            sg.g_logger.write_log(f"Exception occured triple screen 종목 초기화 실패 프로그램 종료.: {str(ex)}",
+                                  log_lv=5,
+                                  is_slacker=True)
+
+        if len(kau_list_zenjitu_rieki) > 0:
+            sg.g_logger.write_log(f"금일 살만한 주식 : {len(kau_list_zenjitu_rieki)} 개\r\n{kau_list_zenjitu_rieki}\r\n", log_lv=2, is_slacker=True)
+        elif len(kau_list_zenjitu_rieki) <= 0:
+            sg.g_logger.write_log(f"금일 살만한 주식을 찾을 수 없음. 프로그램 종료.", log_lv=2, is_slacker=True)
+            sys.exit(0)
 
         t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
-        t_ready = datetime.now().replace(hour=9, minute=2, second=0, microsecond=0)
         t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
         t_buy_end = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
         t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
@@ -337,47 +358,20 @@ else:
 
         old_min = -1
         is_notice = False
-        is_pluse = False
         today_hennka_prices = {}
         while True:
             t_now = datetime.now()
             cur_min = t_now.minute
-            if t_taiki <= t_now < t_ready:
+            if t_taiki <= t_now < t_start:
                 time.sleep(1)
                 print("--떡상 기원--")
-
-            elif t_ready <= t_now < t_start:
-                kau_list_plus = []
-                for stock_name in kau_list_all:
-                    stock_code = sg.g_market_db.get_stock_code(stock_name)
-                    if stock_code is not None:
-                        hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
-                        today_hennka_prices[stock_code] = hennka_price
-                        current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
-                        if today_open < current_price:
-                            kau_list_plus.append(stock_name)
-                    else:
-                        continue
-                sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2, is_slacker=True)
             elif t_start <= t_now < t_buy_end:
                 if cur_min != old_min:
                     old_min = cur_min
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                     bought_count = len(bought_list)
                     if bought_count < sg.g_buy_auto_stock_count_short:
-                        if len(kau_list_plus) == 0:
-                            for stock_name in kau_list_all:
-                                stock_code = sg.g_market_db.get_stock_code(stock_name)
-                                if stock_code is not None:
-                                    hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
-                                    current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
-                                    if today_open < current_price:
-                                        kau_list_plus.append(stock_name)
-                                else:
-                                    continue
-                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
-                                                  is_slacker=True)
-                        for stock_name in kau_list_plus:
+                        for stock_name in kau_list_zenjitu_rieki:
                             stock_code = sg.g_market_db.get_stock_code(stock_name)
                             if stock_code is None:
                                 sg.g_logger.write_log(f"종목코드 못 불러옴:{stock_name}", log_lv=3)
@@ -427,25 +421,8 @@ else:
                                 sg.g_logger.write_log(f"매도 하기위해 for문을 빠져나옵니다.", log_lv=2, is_slacker=True)
                                 break  # 매도 하기위해 for문을 빠져나옴
                             else:
-                                # sg.g_logger.write_log(f"{stock_name}====살까 말까 계산 처리...E N D", log_lv=2)
+                                # sg.g_logger.write_log(f"{stock_name}====is_buy_sell 실패.", log_lv=2)
                                 continue
-
-                        if ((datetime.now().minute % 60) <= 30) and is_pluse is False:
-                            kau_list_plus = []
-                            for stock_name in kau_list_all:
-                                stock_code = sg.g_market_db.get_stock_code(stock_name)
-                                if stock_code is not None:
-                                    hennka_price, today_open = sg.g_creon.get_target_price(code=stock_code)
-                                    current_price, ask_price, bid_price = sg.g_creon.get_current_price(stock_code)
-                                    if today_open < current_price:
-                                        kau_list_plus.append(stock_name)
-                                else:
-                                    continue
-                            is_pluse = True
-                            sg.g_logger.write_log(f"\t상한가 주식 개수 갱신 완료 : {len(kau_list_plus)}개\t", log_lv=2,
-                                                  is_slacker=False)
-                        elif (datetime.now().minute % 60) > 30:
-                            is_pluse = False
                     else:
                         sg.g_logger.write_log(f"\t구매 개수 제한에 걸림... : {bought_count}개\t", log_lv=2,
                                               is_slacker=False)
@@ -478,13 +455,12 @@ else:
                         stock_name_sell = sg.g_market_db.get_stock_name(stock_code)
                         sg.g_logger.write_log(f"매도 했습니다.\r\n"
                                               f"이름 = {stock_name_sell}\r\n"
-                                              f"현재가 = {current_price}\r\n"
-                                              f"돌파가격 = {hennka_price}\r\n"
-                                              f"현재가-돌파가격 = {current_price - hennka_price}\r\n",
+                                              f"현재가 = {(current_price):,.0f}\r\n"
+                                              f"돌파가격 = {(hennka_price):,.0f}\r\n"
+                                              f"현재가-돌파가격 = {(current_price - hennka_price):,.0f}\r\n",
                                               log_lv=2, is_slacker=True)
 
             elif t_stock_end <= t_now:
-                sg.g_creon.notice_current_status(is_slacker=True)
                 sg.g_logger.write_log(f"오늘의 주식거래 종료", log_lv=2, is_slacker=True)
                 # =======================================
                 sys.exit(0)
