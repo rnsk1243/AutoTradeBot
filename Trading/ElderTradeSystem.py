@@ -125,17 +125,20 @@ class ElderTradeSystem:
             elif (cur_h == 9 and cur_min >= 5) or (9 < cur_h <= 14) or (cur_h == 14 and cur_min < 60):
                 min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
 
+                recent_rieki_count = df_yester_day.recent_rieki_count
+                recent_not_rieki_count = df_yester_day.recent_not_rieki_count
                 recent_rieki_count_long = df_yester_day.recent_rieki_count_long
                 recent_not_rieki_count_long = df_yester_day.recent_not_rieki_count_long
-                recent_not_rieki_count = df_yester_day.recent_not_rieki_count
-                recent_rieki_count = df_yester_day.recent_rieki_count
 
-                if hennka_price < cur_price < (hennka_price * 1.003) and \
-                   recent_not_rieki_count_long < recent_rieki_count_long and \
-                   recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count:
+                step1 = hennka_price < cur_price
+                step2 = recent_not_rieki_count_long < recent_rieki_count_long
+                step3 = (recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count)
+
+                if step1 and step2 and step3:
                     result = True
                 else:
                     result = None
+
             elif cur_h == 15 and 15 <= cur_min < 20:
                 # print(f"{df_min['date'].day}일 장 종료")
                 return False
@@ -177,9 +180,11 @@ class ElderTradeSystem:
             recent_not_rieki_count_long = df_day.recent_not_rieki_count_long
             # rieki_persent = df_day.rieki_persent
 
-            if hennka_price < df_min['close'] and \
-               recent_not_rieki_count_long < recent_rieki_count_long and \
-               recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count:
+            step1 = hennka_price < df_min['close']
+            step2 = recent_not_rieki_count_long < recent_rieki_count_long
+            step3 = (recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count)
+
+            if step1 and step2 and step3:
                 result = True
             else:
                 result = None

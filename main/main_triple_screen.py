@@ -57,7 +57,7 @@ if __name__ == '__main__':
         elif cur_bought_count == 0:
             can_use_cash = total_cash * buy_stock_cash_p
             total_stock_cash = 0
-            cur_can_use_cash = can_use_cash - total_stock_cash
+            cur_can_use_cash = int(can_use_cash - total_stock_cash)
         else:
             sg.g_logger.write_log(f"Exception occured triple screen 구매한 종목 개수 이상발생->개수:{cur_bought_count}",
                                   log_lv=5,
@@ -70,7 +70,7 @@ if __name__ == '__main__':
                                   is_slacker=True)
             atari_cash = 0
         else:
-            atari_cash = can_use_cash // sg.g_buy_auto_stock_count_short
+            atari_cash = int(cur_can_use_cash // sg.g_buy_auto_stock_count_short)
 
         sg.g_logger.write_log(f"투자 비율 = {buy_stock_cash_p * 100}%", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"투자 비율에 따른 전체 투자금 = {(can_use_cash):,.0f}", log_lv=2, is_slacker=True)
@@ -93,12 +93,17 @@ if __name__ == '__main__':
                     if analysis_data_df_day is not None:
                         analysis_series = sg.g_ets.get_macd_stochastic(df=analysis_data_df_day)
                         if analysis_series is not None and len(analysis_series) > 0:
-                            recent_rieki_count_long = analysis_series.iloc[-1].recent_rieki_count_long
-                            recent_not_rieki_count_long = analysis_series.iloc[-1].recent_not_rieki_count_long
-                            recent_not_rieki_count = analysis_series.iloc[-1].recent_not_rieki_count
-                            recent_rieki_count = analysis_series.iloc[-1].recent_rieki_count
-                            if recent_not_rieki_count_long < recent_rieki_count_long and \
-                                    recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count:
+
+                            df_yester_day = analysis_series.iloc[-1]
+                            recent_rieki_count = df_yester_day.recent_rieki_count
+                            recent_not_rieki_count = df_yester_day.recent_not_rieki_count
+                            recent_rieki_count_long = df_yester_day.recent_rieki_count_long
+                            recent_not_rieki_count_long = df_yester_day.recent_not_rieki_count_long
+
+                            step2 = recent_not_rieki_count_long < recent_rieki_count_long
+                            step3 = (recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count)
+
+                            if step2 and step3:
                                 kau_list_zenjitu_rieki.append(stock_name)
                         else:
                             sg.g_logger.write_log(f"analysis_series 분석 실패 ：{stock_name}", log_lv=3,
@@ -112,8 +117,9 @@ if __name__ == '__main__':
                                   is_slacker=True)
 
         if len(kau_list_zenjitu_rieki) > 0:
-            sg.g_logger.write_log(f"금일 살만한 주식 : {len(kau_list_zenjitu_rieki)} 개\r\n{kau_list_zenjitu_rieki}\r\n", log_lv=2, is_slacker=True)
-        elif len(kau_list_zenjitu_rieki) <= 0:
+            sg.g_logger.write_log(f"금일 살만한 주식 : {len(kau_list_zenjitu_rieki)} 개\r\n{kau_list_zenjitu_rieki}\r\n",
+                                  log_lv=2, is_slacker=True)
+        else:
             sg.g_logger.write_log(f"금일 살만한 주식을 찾을 수 없음. 프로그램 종료.", log_lv=2, is_slacker=True)
             sys.exit(0)
 
@@ -255,10 +261,10 @@ else:
         else:
             sg.g_logger.write_log(f"実行ブランチ名：{branch_name}", log_lv=2, is_slacker=True)
         # =======================================
-        # today = datetime.today().weekday()
-        # if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
-        #     sg.g_logger.write_log(f"本日は土日または日曜なので株取引プログラムを終了します。", log_lv=2, is_slacker=True)
-        #     sys.exit(0)
+        today = datetime.today().weekday()
+        if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
+            sg.g_logger.write_log(f"本日は土日または日曜なので株取引プログラムを終了します。", log_lv=2, is_slacker=True)
+            sys.exit(0)
         # =======================================
         is_login_success = False
         try:
@@ -290,7 +296,7 @@ else:
         elif cur_bought_count == 0:
             can_use_cash = total_cash * buy_stock_cash_p
             total_stock_cash = 0
-            cur_can_use_cash = can_use_cash - total_stock_cash
+            cur_can_use_cash = int(can_use_cash - total_stock_cash)
         else:
             sg.g_logger.write_log(f"Exception occured triple screen 구매한 종목 개수 이상발생->개수:{cur_bought_count}",
                                   log_lv=5,
@@ -303,7 +309,7 @@ else:
                                   is_slacker=True)
             atari_cash = 0
         else:
-            atari_cash = can_use_cash // sg.g_buy_auto_stock_count_short
+            atari_cash = int(cur_can_use_cash // sg.g_buy_auto_stock_count_short)
 
         sg.g_logger.write_log(f"투자 비율 = {buy_stock_cash_p * 100}%", log_lv=2, is_slacker=True)
         sg.g_logger.write_log(f"투자 비율에 따른 전체 투자금 = {(can_use_cash):,.0f}", log_lv=2, is_slacker=True)
@@ -326,12 +332,17 @@ else:
                     if analysis_data_df_day is not None:
                         analysis_series = sg.g_ets.get_macd_stochastic(df=analysis_data_df_day)
                         if analysis_series is not None and len(analysis_series) > 0:
-                            recent_rieki_count_long = analysis_series.iloc[-1].recent_rieki_count_long
-                            recent_not_rieki_count_long = analysis_series.iloc[-1].recent_not_rieki_count_long
-                            recent_not_rieki_count = analysis_series.iloc[-1].recent_not_rieki_count
-                            recent_rieki_count = analysis_series.iloc[-1].recent_rieki_count
-                            if recent_not_rieki_count_long < recent_rieki_count_long and \
-                                    recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count:
+
+                            df_yester_day = analysis_series.iloc[-1]
+                            recent_rieki_count = df_yester_day.recent_rieki_count
+                            recent_not_rieki_count = df_yester_day.recent_not_rieki_count
+                            recent_rieki_count_long = df_yester_day.recent_rieki_count_long
+                            recent_not_rieki_count_long = df_yester_day.recent_not_rieki_count_long
+
+                            step2 = recent_not_rieki_count_long < recent_rieki_count_long
+                            step3 = (recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count)
+
+                            if step2 and step3:
                                 kau_list_zenjitu_rieki.append(stock_name)
                         else:
                             sg.g_logger.write_log(f"analysis_series 분석 실패 ：{stock_name}", log_lv=3,
@@ -345,8 +356,9 @@ else:
                                   is_slacker=True)
 
         if len(kau_list_zenjitu_rieki) > 0:
-            sg.g_logger.write_log(f"금일 살만한 주식 : {len(kau_list_zenjitu_rieki)} 개\r\n{kau_list_zenjitu_rieki}\r\n", log_lv=2, is_slacker=True)
-        elif len(kau_list_zenjitu_rieki) <= 0:
+            sg.g_logger.write_log(f"금일 살만한 주식 : {len(kau_list_zenjitu_rieki)} 개\r\n{kau_list_zenjitu_rieki}\r\n",
+                                  log_lv=2, is_slacker=True)
+        else:
             sg.g_logger.write_log(f"금일 살만한 주식을 찾을 수 없음. 프로그램 종료.", log_lv=2, is_slacker=True)
             sys.exit(0)
 

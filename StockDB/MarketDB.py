@@ -234,7 +234,7 @@ class MarketDB:
             sg.g_logger.write_log(f"Exception occured check_stock_price : {str(df)}", log_lv=5)
             return None
 
-    def get_past_stock_price(self, code, day_ago, chart_type="m"):
+    def get_past_stock_price(self, code, day_ago, day_ago_end=0, chart_type="m"):
         """
         株価を取得する。
         :param code: 株コードまたは株の名前
@@ -249,7 +249,7 @@ class MarketDB:
 
         ago_date = datetime.today() - timedelta(days=day_ago)
         ago_date_start = ago_date.replace(hour=9, minute=1, second=0, microsecond=0)
-        end_date = datetime.today() - timedelta(days=0)
+        end_date = datetime.today() - timedelta(days=day_ago_end)
         ago_date_end = end_date.replace(hour=15, minute=30, second=0, microsecond=0)
 
         if code in self.__codes_keys:

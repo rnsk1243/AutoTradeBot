@@ -33,10 +33,11 @@ benefit_OK = 0
 benefit_NO = 0
 
 analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
+recent_rieki_count_day_long_end = sg.g_json_trading_config['recent_rieki_count_day_long_end']
 kau_list = sg.g_json_trading_config['buy_list']
 larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
 rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
-test_days = 5  # day
+test_days = 10  # day
 is_graph = False
 is_graph_code = '네이처셀'
 cur_stock_name = ""
@@ -147,6 +148,7 @@ if __name__ == '__main__':
         tool.createFolder(f"{path_xlsx}{folder_name}")
 
         xlsx_analysis = pd.DataFrame()
+        xlsx_analysis_detail = pd.DataFrame()
 
         for i in range(1, kuriae):
             # rieki_persent_break = random.randint(arg4_min_rieki, arg5_max_rieki)
@@ -165,8 +167,8 @@ if __name__ == '__main__':
             for stock_code in test_target_stock_list:
                 stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
                 cur_stock_name = stock_name
-                df_min = sg.g_market_db.get_past_stock_price(stock_code, 50)
-                df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day, chart_type="D")
+                df_min = sg.g_market_db.get_past_stock_price(stock_code, 50, day_ago_end=recent_rieki_count_day_long_end)
+                df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day, recent_rieki_count_day_long_end, chart_type="D")
 
                 df_data_day = make_test_data(df_day, 1)
                 if df_data_day is None:
@@ -214,6 +216,10 @@ if __name__ == '__main__':
 
                 cur_bene_money_pro = round(((cur_benefit / money) * 100), 2)
                 print(f"Result : \t{stock_name}\t{(cur_benefit):,.0f}\t{cur_bene_money_pro}\t KRW")
+                xlsx_analysis_detail = xlsx_analysis_detail.append({"stock_name":stock_name,
+                                                                    "cur_benefit":cur_benefit,
+                                                                    "cur_bene_money_pro":cur_bene_money_pro},
+                                                                   ignore_index=True)
                 # ========================================
                 if is_graph and stock_code == is_graph_code:
                     plot_obj = cerebro
@@ -259,6 +265,8 @@ if __name__ == '__main__':
 
             xlsx_analysis.to_excel(f"{path_xlsx}{folder_name}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과.xlsx",
                                    sheet_name=f'결과')
+            xlsx_analysis_detail.to_excel(f"{path_xlsx}{folder_name}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_상세.xlsx",
+                                   sheet_name=f'결과')
         print("작업시간 : ", time.time() - start_time)
     except Exception as ex:
         sg.g_logger.write_log(f"Exception occured 【back_test.bat】: {str(ex)} \r\n 【{cur_stock_name}】", log_lv=5)
@@ -272,8 +280,9 @@ else:
 
         for stock_code in test_target_stock_list:
             stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
-            df_min = sg.g_market_db.get_past_stock_price(stock_code, 50)
-            df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day, chart_type="D")
+            df_min = sg.g_market_db.get_past_stock_price(stock_code, 50, day_ago_end=recent_rieki_count_day_long_end)
+            df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day,
+                                                         recent_rieki_count_day_long_end, chart_type="D")
 
             df_data_day = make_test_data(df_day, 1)
             if df_data_day is None:
