@@ -22,9 +22,10 @@ bene_money_pro_total = 0
 fees = 0.0014
 buy_persent = 90
 money = 10000000
+test_target_name = 'buy_list'
 # test_target_stock_list = sg.g_json_trading_config['test_list1']
 # test_target_stock_list = sg.g_json_trading_config['bought_list']
-test_target_stock_list = sg.g_json_trading_config['buy_list']
+test_target_stock_list = sg.g_json_trading_config[test_target_name]
 # test_target_stock_list = sg.g_json_trading_config['all_list']
 # test_target_stock_list = list(sg.g_market_db.get_stock_info_all().values())
 test_stock_amount = len(test_target_stock_list)
@@ -137,18 +138,17 @@ if __name__ == '__main__':
         min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
 
         # folder 作成
-        if arg6_analysis_data_amount_day == -1:
-            folder_name = f"{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_random_day"
-            is_analysis_random = True
-        else:
-            folder_name = f"{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_{arg6_analysis_data_amount_day}"
-            is_analysis_random = False
+        folder_name = f"{datetime.today().strftime('%Y-%m')}_테스트결과"
+        folder_name_detail = f"{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과"
 
         print(f"folder_name:{folder_name}")
         tool.createFolder(f"{path_xlsx}{folder_name}")
+        tool.createFolder(f"{path_xlsx}{folder_name}\\{folder_name_detail}")
 
         xlsx_analysis = pd.DataFrame()
         xlsx_analysis_detail = pd.DataFrame()
+
+        sg.g_logger.write_log(f"\r\n back test 시작 \r\n", log_lv=2, is_slacker=True)
 
         for i in range(1, kuriae):
             # rieki_persent_break = random.randint(arg4_min_rieki, arg5_max_rieki)
@@ -236,18 +236,22 @@ if __name__ == '__main__':
                 bene_pro = 0
                 syueki = 0
 
-            print(f"--------------------------------------\r\n"
-                  f"rieki_persent_break-【{rieki_persent_break}】\r\n"
-                  f"larry_constant_K_anl----【{larry_constant_K_anl}】\r\n"
-                  f"larry_constant_K_buy----【{larry_constant_K_buy}】\r\n"
-                  f"arg6_analysis_data_amount_day----【{arg6_analysis_data_amount_day}】\r\n"
-                  f"구매건수-------------【{benefit_OK_NO}】\r\n"
-                  f"수익누계-------------【{(cumulative_benefit):,.0f}】\r\n"
-                  f"수익누계평균----------【{(cumulative_benefit_ave):,.0f}】\r\n"
-                  f"이득확률-------------【{bene_pro}%】\r\n"
-                  f"수익평균-------------【{syueki}】\r\n"
-                  f"완료----------------【{round((i/kuriae)*100)}%】\r\n"
-                  f"--------------------------------------\r\n")
+            result_info = f"【{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}】\r\n" \
+                          f"테스트대상-------------【{test_target_name}】\r\n" \
+                          f"larry_constant_K_anl-【{larry_constant_K_anl}】\r\n"\
+                          f"larry_constant_K_buy-【{larry_constant_K_buy}】\r\n" \
+                          f"recent_rieki_count_day-【{recent_rieki_count_day}】\r\n"\
+                          f"recent_rieki_count_day_long-【{recent_rieki_count_day_long}】\r\n" \
+                          f"min_rieki_amount----【{min_rieki_amount}】\r\n" \
+                          f"구매건수-------------【{benefit_OK_NO}】\r\n"\
+                          f"수익누계-------------【{(cumulative_benefit):,.0f}】\r\n"\
+                          f"수익누계평균----------【{(cumulative_benefit_ave):,.0f}】\r\n"\
+                          f"이득확률-------------【{bene_pro}%】\r\n"\
+                          f"수익평균-------------【{syueki}%】\r\n"\
+                          f"테스트기간-----------【{test_days}일】\r\n"\
+                          f"매일 테스트 완료------\r\n"
+
+            print(result_info)
 
             xlsx_analysis = xlsx_analysis.append({"rieki_persent_break": rieki_persent_break,
                                                   "larry_constant_K_anl": larry_constant_K_anl,
@@ -263,13 +267,18 @@ if __name__ == '__main__':
                                                   "recent_rieki_count_day": recent_rieki_count_day,
                                                   "min_rieki_amount": min_rieki_amount}, ignore_index=True)
 
-            xlsx_analysis.to_excel(f"{path_xlsx}{folder_name}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과.xlsx",
+            xlsx_analysis.to_excel(f"{path_xlsx}{folder_name}\\{folder_name_detail}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과.xlsx",
                                    sheet_name=f'결과')
-            xlsx_analysis_detail.to_excel(f"{path_xlsx}{folder_name}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_상세.xlsx",
+            xlsx_analysis_detail.to_excel(f"{path_xlsx}{folder_name}\\{folder_name_detail}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_상세.xlsx",
                                    sheet_name=f'결과')
+
+            sg.g_logger.write_log(result_info, log_lv=2, is_slacker=True)
+
         print("작업시간 : ", time.time() - start_time)
+        # =======================================
+        sys.exit(0)
     except Exception as ex:
-        sg.g_logger.write_log(f"Exception occured 【back_test.bat】: {str(ex)} \r\n 【{cur_stock_name}】", log_lv=5)
+        sg.g_logger.write_log(f"Exception occured 【main_back_test】: {str(ex)} \r\n 【{cur_stock_name}】", log_lv=5, is_slacker=True)
 
 else:
     try:
