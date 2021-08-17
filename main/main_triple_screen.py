@@ -123,22 +123,16 @@ if __name__ == '__main__':
             sg.g_logger.write_log(f"금일 살만한 주식을 찾을 수 없음. 프로그램 종료.", log_lv=2, is_slacker=True)
             sys.exit(0)
 
-        t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
-        t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
-        t_buy_end = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
-        t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
-        t_stock_end = datetime.now().replace(hour=15, minute=20, second=0, microsecond=0)
-
         old_min = -1
         is_notice = False
         today_hennka_prices = {}
         while True:
             t_now = datetime.now()
             cur_min = t_now.minute
-            if t_taiki <= t_now < t_start:
+            if sg.g_t_taiki <= t_now < sg.g_t_start:
                 time.sleep(1)
                 print("--떡상 기원--")
-            elif t_start <= t_now < t_buy_end:
+            elif sg.g_t_start <= t_now < sg.g_t_buy_end:
                 if cur_min != old_min:
                     old_min = cur_min
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
@@ -207,11 +201,11 @@ if __name__ == '__main__':
                     elif (t_now.hour % 2) > 0:
                         is_notice = False
 
-            elif t_buy_end <= t_now < t_sell_start:
+            elif sg.g_t_buy_end <= t_now < sg.g_t_sell_start:
                 print("매도 대기중...")
                 time.sleep(5)
 
-            elif t_sell_start <= t_now < t_stock_end:
+            elif sg.g_t_sell_start <= t_now < sg.g_t_stock_end:
                 bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                 for bought_stock in bought_list:
                     stock_code = bought_stock['code']
@@ -233,7 +227,7 @@ if __name__ == '__main__':
                                               f"현재가-돌파가격 = {(current_price - hennka_price):,.0f}\r\n",
                                               log_lv=2, is_slacker=True)
 
-            elif t_stock_end <= t_now:
+            elif sg.g_t_stock_end <= t_now:
                 sg.g_logger.write_log(f"오늘의 주식거래 종료", log_lv=2, is_slacker=True)
                 # =======================================
                 sys.exit(0)
@@ -362,22 +356,16 @@ else:
             sg.g_logger.write_log(f"금일 살만한 주식을 찾을 수 없음. 프로그램 종료.", log_lv=2, is_slacker=True)
             sys.exit(0)
 
-        t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
-        t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
-        t_buy_end = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
-        t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
-        t_stock_end = datetime.now().replace(hour=15, minute=20, second=0, microsecond=0)
-
         old_min = -1
         is_notice = False
         today_hennka_prices = {}
         while True:
             t_now = datetime.now()
             cur_min = t_now.minute
-            if t_taiki <= t_now < t_start:
+            if sg.g_t_taiki <= t_now < sg.g_t_start:
                 time.sleep(1)
                 print("--떡상 기원--")
-            elif t_start <= t_now < t_buy_end:
+            elif sg.g_t_start <= t_now < sg.g_t_buy_end:
                 if cur_min != old_min:
                     old_min = cur_min
                     bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
@@ -446,11 +434,11 @@ else:
                     elif (t_now.hour % 2) > 0:
                         is_notice = False
 
-            elif t_buy_end <= t_now < t_sell_start:
+            elif sg.g_t_buy_end <= t_now < sg.g_t_sell_start:
                 print("매도 대기중...")
                 time.sleep(5)
 
-            elif t_sell_start <= t_now < t_stock_end:
+            elif sg.g_t_sell_start <= t_now < sg.g_t_stock_end:
                 bought_list = sg.g_creon.get_bought_stock_list()  # 구매한 주식 불러오기
                 for bought_stock in bought_list:
                     stock_code = bought_stock['code']
@@ -472,7 +460,7 @@ else:
                                               f"현재가-돌파가격 = {(current_price - hennka_price):,.0f}\r\n",
                                               log_lv=2, is_slacker=True)
 
-            elif t_stock_end <= t_now:
+            elif sg.g_t_stock_end <= t_now:
                 sg.g_logger.write_log(f"오늘의 주식거래 종료", log_lv=2, is_slacker=True)
                 # =======================================
                 sys.exit(0)

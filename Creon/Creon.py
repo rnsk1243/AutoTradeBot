@@ -342,7 +342,7 @@ class Creon:
             # ------------DB INSERT--------------
         return requestedAmount, resent_min
 
-    def request_day_chart_type(self, code, day_ago, chartType='m'):
+    def request_day_chart_type(self, code, day_ago=0, chartType='m'):
         """
         月、週、分の全日データを取得
         :param code: 株コード
@@ -352,9 +352,13 @@ class Creon:
         result_amount = 0
         resent_min = 0
         amount = 5 * ONE_DAY_MIN_AMOUNT
-        today = datetime.today().weekday()
-        if today == 0:  # 月曜日の場合、当日のみ取得する。
-            day_ago = 0
+
+        if day_ago < 2:
+            t_now = datetime.now()
+            if sg.g_t_0 <= t_now < sg.g_t_stock_end_30:
+                day_ago = 1
+            else:
+                day_ago = 0
 
         ago_date = datetime.today() - timedelta(days=day_ago)
         ago_date_start = ago_date.replace(hour=9, minute=1, second=0, microsecond=0)

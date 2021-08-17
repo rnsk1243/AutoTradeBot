@@ -41,7 +41,7 @@ if __name__ == '__main__':
         sg.g_logger.write_log(f"분차트 종목 분데이터 수집 시작", log_lv=2, is_slacker=True)
         dfStockInfo = sg.g_creon.request_stock_info()
         for row in dfStockInfo.itertuples():
-            result = sg.g_creon.request_day_chart_type(row[1], 1)
+            result = sg.g_creon.request_day_chart_type(row[1])
             if result is None:
                 sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패, 받은 개수가 0개일지도:{row[2]}", log_lv=3)
                 continue
@@ -72,7 +72,7 @@ else:
         # =======================================
         dfStockInfo = sg.g_creon.request_stock_info()
         for row in dfStockInfo.itertuples():
-            result = sg.g_creon.request_day_chart_type(row[1], 1)
+            result = sg.g_creon.request_day_chart_type(row[1])
             if result is None:
                 sg.g_logger.write_log(f"Creon으로부터 데이터 받기 실패, 받은 개수가 0개일지도:{row[2]}", log_lv=3)
                 continue

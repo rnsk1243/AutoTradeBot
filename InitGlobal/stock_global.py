@@ -7,6 +7,7 @@ from StockDB import MarketDB as md
 from Creon import CreonLogin as cl
 from Creon import Creon as co
 from Trading import ElderTradeSystem as ets
+from datetime import datetime
 import json
 
 global g_json_logging
@@ -46,6 +47,13 @@ global g_db_updater
 # global g_test_data_amount
 global g_one_day_data_amount
 global g_host_name
+global g_t_taiki
+global g_t_start
+global g_t_buy_end
+global g_t_sell_start
+global g_t_stock_end
+global g_t_stock_end_30
+global g_t_0
 
 def init_json():
     try:
@@ -110,6 +118,13 @@ def init_global():
         global g_day_start_pure_money
         global g_day_start_assets_money
         global g_host_name
+        global g_t_taiki
+        global g_t_start
+        global g_t_buy_end
+        global g_t_sell_start
+        global g_t_stock_end
+        global g_t_stock_end_30
+        global g_t_0
 
         g_logger = mylog.MyLogging()
         # =============================================
@@ -135,6 +150,14 @@ def init_global():
         g_one_day_data_amount = 381
         g_host_name = gethostname()
         # g_test_data_amount = g_one_day_data_amount * 5
+        # =============================================
+        g_t_0 = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        g_t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
+        g_t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
+        g_t_buy_end = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
+        g_t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
+        g_t_stock_end = datetime.now().replace(hour=15, minute=20, second=0, microsecond=0)
+        g_t_stock_end_30 = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)
         # =============================================
         if g_host_name == host:
             init_win32com_client()
