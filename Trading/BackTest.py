@@ -8,9 +8,7 @@ class BackTest(bt.Strategy):
             self.__ets = arg_list[0]
             self.__macd_stoch_data_min = arg_list[1] # macd_stoch_data.index = pd.to_datetime(macd_stoch_data['date'])
             self.__macd_stoch_data_day = arg_list[2]
-            # self.__stock_name = arg_list[3]
-            # self.__rieki_persent_break = arg_list[4]
-            self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
+            # self.rsi = bt.indicators.RSI_SMA(self.data.close, period=21)
             self.__buy_price = 0
 
         except Exception as e:

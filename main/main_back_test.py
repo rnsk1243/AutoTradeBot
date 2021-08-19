@@ -1,9 +1,6 @@
 import sys
 sys.path.append('../')
 from datetime import datetime
-import datetime as dt
-import math
-import random
 from datetime import timedelta
 import pandas as pd
 import backtrader as bter
@@ -11,23 +8,21 @@ from InitGlobal import stock_global as sg
 from Trading import BackTest as bt
 import time
 from Utility import Tools as tool
-start_time = time.time()
+import itertools
 
+start_time = time.time()
 sg.init_global()
 # =======================================
 path_xlsx = "..\\..\\stockauto\\xlsx\\"
 path_xlsx_more = "..\\..\\stockauto\\xlsx\\more\\"
+path_trading_config = "..\\..\\stockauto\\MyJson\\trading_config.json"
 benefit_total = 0
 bene_money_pro_total = 0
 fees = 0.0014
 buy_persent = 90
 money = 10000000
 test_target_name = 'buy_list'
-# test_target_stock_list = sg.g_json_trading_config['test_list1']
-# test_target_stock_list = sg.g_json_trading_config['bought_list']
 test_target_stock_list = sg.g_json_trading_config[test_target_name]
-# test_target_stock_list = sg.g_json_trading_config['all_list']
-# test_target_stock_list = list(sg.g_market_db.get_stock_info_all().values())
 test_stock_amount = len(test_target_stock_list)
 comp_count = 0
 benefit_OK = 0
@@ -35,21 +30,10 @@ benefit_NO = 0
 
 analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
 recent_rieki_count_day_long_end = sg.g_json_trading_config['recent_rieki_count_day_long_end']
-kau_list = sg.g_json_trading_config['buy_list']
-larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
-rieki_persent_break = sg.g_json_trading_config['rieki_persent_break']
-test_days = 5  # day
+test_days = sg.g_json_trading_config['back_test_days']  # day
 is_graph = False
 is_graph_code = '네이처셀'
 cur_stock_name = ""
-
-algori = "if macdhist_m < 0 < macdhist_ave_m and macdhist_day < 0 < macdhist_ave_day\
-                    and slow_d_day < slow_d_buy and slow_d_m < slow_d_buy"
-
-# sg.g_logger.write_log(f"\tanalysis_data_amount_day\t{analysis_data_amount_day}\t", log_lv=2, is_con_print=False)
-# sg.g_logger.write_log(f"\tlarry_constant_K_anl\t{larry_constant_K_anl}\t", log_lv=2, is_con_print=False)
-# sg.g_logger.write_log(f"\trieki_persent_break\t{rieki_persent_break}\t", log_lv=2, is_con_print=False)
-# sg.g_logger.write_log(f"\t{algori}\t\t", log_lv=2, is_con_print=False)
 
 def make_test_data(df, chart):
 
@@ -125,38 +109,41 @@ def make_test_data(df, chart):
 
 if __name__ == '__main__':
     try:
-        args = sys.argv
-        kuriae = 2
-        # arg4_min_rieki = int(args[2])
-        # arg5_max_rieki = int(args[3])
-        arg6_analysis_data_amount_day = analysis_data_amount_day
-        print(f"kuriae : {kuriae}")
-        # print(f"rieki : {arg4_min_rieki}～{arg5_max_rieki}")
-        is_analysis_random = False
-        recent_rieki_count_day = sg.g_json_trading_config['recent_rieki_count_day']
-        recent_rieki_count_day_long = sg.g_json_trading_config['recent_rieki_count_day_long']
+        larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
+        larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
         min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
+
+        cur_recent_rieki_count_day = sg.g_json_trading_config['recent_rieki_count_day']
+        cur_recent_rieki_count_day_long = sg.g_json_trading_config['recent_rieki_count_day_long']
+        delta_day = 1
+        delta_day_long = cur_recent_rieki_count_day_long // 10
+
+        kumi_list_1 = [cur_recent_rieki_count_day - delta_day * 2,
+                       cur_recent_rieki_count_day - delta_day * 1,
+                       cur_recent_rieki_count_day,
+                       cur_recent_rieki_count_day + delta_day * 1,
+                       cur_recent_rieki_count_day + delta_day * 2]
+        kumi_list_2 = [cur_recent_rieki_count_day_long - delta_day_long * 2,
+                       cur_recent_rieki_count_day_long - delta_day_long * 1,
+                       cur_recent_rieki_count_day_long,
+                       cur_recent_rieki_count_day_long + delta_day_long * 1,
+                       cur_recent_rieki_count_day_long + delta_day_long * 2]
+
+        p = itertools.product(kumi_list_1, kumi_list_2)
+        sg.g_logger.write_log(f"\r\n back test 시작 \r\nkumi_list_1: {kumi_list_1}\r\nkumi_list_2: {kumi_list_2}\r\n", log_lv=2, is_slacker=True)
+        xlsx_analysis = pd.DataFrame()
 
         # folder 作成
         folder_name = f"{datetime.today().strftime('%Y-%m')}_테스트결과"
-        folder_name_detail = f"{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과"
-
-        print(f"folder_name:{folder_name}")
+        folder_name_detail = f"{datetime.today().strftime('%Y-%m-%d')}_테스트결과"
         tool.createFolder(f"{path_xlsx}{folder_name}")
         tool.createFolder(f"{path_xlsx}{folder_name}\\{folder_name_detail}")
 
-        xlsx_analysis = pd.DataFrame()
-        xlsx_analysis_detail = pd.DataFrame()
+        for kumi_tuple in p:
 
-        sg.g_logger.write_log(f"\r\n back test 시작 \r\n", log_lv=2, is_slacker=True)
-
-        for i in range(1, kuriae):
-            # rieki_persent_break = random.randint(arg4_min_rieki, arg5_max_rieki)
-            larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
-            larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
-
-            if is_analysis_random is True:
-                arg6_analysis_data_amount_day = round(random.randint(180, 400), -1)
+            xlsx_analysis_detail = pd.DataFrame()
+            recent_rieki_count_day = kumi_tuple[0]
+            recent_rieki_count_day_long = kumi_tuple[1]
 
             cumulative_benefit = 0
             cumulative_benefit_ave = 0
@@ -167,8 +154,10 @@ if __name__ == '__main__':
             for stock_code in test_target_stock_list:
                 stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
                 cur_stock_name = stock_name
-                df_min = sg.g_market_db.get_past_stock_price(stock_code, 50, day_ago_end=recent_rieki_count_day_long_end)
-                df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day, recent_rieki_count_day_long_end, chart_type="D")
+                df_min = sg.g_market_db.get_past_stock_price(stock_code, 20,
+                                                             day_ago_end=recent_rieki_count_day_long_end)
+                df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day,
+                                                             day_ago_end=recent_rieki_count_day_long_end, chart_type="D")
 
                 df_data_day = make_test_data(df_day, 1)
                 if df_data_day is None:
@@ -184,9 +173,6 @@ if __name__ == '__main__':
                 back_test_arg_list.append(sg.g_ets)
                 back_test_arg_list.append(df_data_min)
                 back_test_arg_list.append(df_data_day)
-                # back_test_arg_list.append(stock_name)
-                # back_test_arg_list.append(rieki_persent_break)
-
                 data = bter.feeds.PandasData(dataname=df_data_min)
 
                 cerebro = bter.Cerebro()
@@ -216,21 +202,15 @@ if __name__ == '__main__':
 
                 cur_bene_money_pro = round(((cur_benefit / money) * 100), 2)
                 print(f"Result : \t{stock_name}\t{(cur_benefit):,.0f}\t{cur_bene_money_pro}\t KRW")
-                xlsx_analysis_detail = xlsx_analysis_detail.append({"stock_name":stock_name,
-                                                                    "cur_benefit":cur_benefit,
-                                                                    "cur_bene_money_pro":cur_bene_money_pro},
+                xlsx_analysis_detail = xlsx_analysis_detail.append({"stock_name": stock_name,
+                                                                    "cur_benefit": cur_benefit,
+                                                                    "cur_bene_money_pro": cur_bene_money_pro},
                                                                    ignore_index=True)
-                # ========================================
-                if is_graph and stock_code == is_graph_code:
-                    plot_obj = cerebro
-                    plot_obj.plot(style='candlestick')
-                    break
-                # ========================================
 
             benefit_OK_NO = benefit_OK + benefit_NO
             if benefit_OK_NO != 0:
                 bene_pro = round(((benefit_OK / benefit_OK_NO) * 100), 2)
-                syueki = round(((cumulative_benefit / (benefit_OK_NO*money)) * 100), 2)
+                syueki = round(((cumulative_benefit / (benefit_OK_NO * money)) * 100), 2)
                 cumulative_benefit_ave = round((cumulative_benefit / benefit_OK_NO))
             else:
                 bene_pro = 0
@@ -238,43 +218,75 @@ if __name__ == '__main__':
 
             result_info = f"【{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}】\r\n" \
                           f"테스트대상-------------【{test_target_name}】\r\n" \
-                          f"larry_constant_K_anl-【{larry_constant_K_anl}】\r\n"\
+                          f"larry_constant_K_anl-【{larry_constant_K_anl}】\r\n" \
                           f"larry_constant_K_buy-【{larry_constant_K_buy}】\r\n" \
-                          f"recent_rieki_count_day-【{recent_rieki_count_day}】\r\n"\
+                          f"recent_rieki_count_day-【{recent_rieki_count_day}】\r\n" \
                           f"recent_rieki_count_day_long-【{recent_rieki_count_day_long}】\r\n" \
                           f"min_rieki_amount----【{min_rieki_amount}】\r\n" \
-                          f"구매건수-------------【{benefit_OK_NO}】\r\n"\
-                          f"수익누계-------------【{(cumulative_benefit):,.0f}】\r\n"\
-                          f"수익누계평균----------【{(cumulative_benefit_ave):,.0f}】\r\n"\
-                          f"이득확률-------------【{bene_pro}%】\r\n"\
-                          f"수익평균-------------【{syueki}%】\r\n"\
-                          f"테스트기간-----------【{test_days}일】\r\n"\
+                          f"구매건수-------------【{benefit_OK_NO}】\r\n" \
+                          f"수익누계-------------【{(cumulative_benefit):,.0f}】\r\n" \
+                          f"수익누계평균----------【{(cumulative_benefit_ave):,.0f}】\r\n" \
+                          f"이득확률-------------【{bene_pro}%】\r\n" \
+                          f"수익평균-------------【{syueki}%】\r\n" \
+                          f"테스트기간-----------【{test_days}일】\r\n" \
                           f"매일 테스트 완료------\r\n"
 
-            print(result_info)
-
-            xlsx_analysis = xlsx_analysis.append({"rieki_persent_break": rieki_persent_break,
-                                                  "larry_constant_K_anl": larry_constant_K_anl,
+            xlsx_analysis = xlsx_analysis.append({"larry_constant_K_anl": larry_constant_K_anl,
                                                   "larry_constant_K_buy": larry_constant_K_buy,
-                                                  "arg6_analysis_data_amount_day": arg6_analysis_data_amount_day,
                                                   "테스트기간": test_days,
                                                   "구매건수": benefit_OK_NO,
-                                                  "수익누계": cumulative_benefit,
+                                                  "cumulative_benefit": cumulative_benefit,
                                                   "수익누계평균": cumulative_benefit_ave,
-                                                  "이득확률": bene_pro,
+                                                  "bene_pro": bene_pro,
                                                   "수익평균": syueki,
                                                   "recent_rieki_count_day_long": recent_rieki_count_day_long,
                                                   "recent_rieki_count_day": recent_rieki_count_day,
                                                   "min_rieki_amount": min_rieki_amount}, ignore_index=True)
 
-            xlsx_analysis.to_excel(f"{path_xlsx}{folder_name}\\{folder_name_detail}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과.xlsx",
-                                   sheet_name=f'결과')
-            xlsx_analysis_detail.to_excel(f"{path_xlsx}{folder_name}\\{folder_name_detail}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_상세.xlsx",
-                                   sheet_name=f'결과')
+            xlsx_analysis_detail.to_excel(
+                f"{path_xlsx}{folder_name}\\{folder_name_detail}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_상세.xlsx",
+                sheet_name=f'결과')
 
-            sg.g_logger.write_log(result_info, log_lv=2, is_slacker=True)
+            sg.g_logger.write_log(result_info, log_lv=2, is_slacker=False)
+        # ============
+        # sort 수익누계 내림차순
+        xlsx_analysis = xlsx_analysis.sort_values('cumulative_benefit', ascending=False)
 
-        print("작업시간 : ", time.time() - start_time)
+        xlsx_analysis.to_excel(
+            f"{path_xlsx}{folder_name}\\{folder_name_detail}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_수익누계_내림차순.xlsx",
+            sheet_name=f'결과')
+        time.sleep(2)
+
+        xlsx_analysis_top5 = xlsx_analysis.iloc[:5]
+        xlsx_analysis_top5 = xlsx_analysis_top5.sort_values('bene_pro', ascending=False)
+
+        xlsx_analysis_top5.to_excel(
+            f"{path_xlsx}{folder_name}\\{folder_name_detail}\\{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}_테스트결과_top5.xlsx",
+            sheet_name=f'결과')
+
+        cur_max_benefit_df = xlsx_analysis_top5.iloc[0]
+
+        if cur_max_benefit_df is not None and len(cur_max_benefit_df) > 0:
+            sg.g_logger.write_log("새 분석 결과를 반영합니다.", log_lv=2, is_slacker=True)
+            new_recent_rieki_count_day = int(cur_max_benefit_df.recent_rieki_count_day)
+            new_recent_rieki_count_day_long = int(cur_max_benefit_df.recent_rieki_count_day_long)
+            new_cumulative_benefit = int(cur_max_benefit_df.cumulative_benefit)
+
+            tool.write_json_single(path_trading_config, "recent_rieki_count_day", new_recent_rieki_count_day)
+            tool.write_json_single(path_trading_config, "recent_rieki_count_day_long", new_recent_rieki_count_day_long)
+
+            hennka_count_day = new_recent_rieki_count_day - cur_recent_rieki_count_day
+            hennka_count_day_long = new_recent_rieki_count_day_long - cur_recent_rieki_count_day_long
+
+            sg.g_logger.write_log(f"새 분석 결과 내용1:\r\n{new_recent_rieki_count_day} / 증감:({hennka_count_day})", log_lv=2, is_slacker=True)
+            sg.g_logger.write_log(f"새 분석 결과 내용2:\r\n{new_recent_rieki_count_day_long} / 증감:({hennka_count_day_long})", log_lv=2, is_slacker=True)
+            sg.g_logger.write_log(f"새 누적 수익:\r\n{new_cumulative_benefit}", log_lv=2, is_slacker=True)
+            sg.g_logger.write_log(f"상세 결과 내용:\r\n{cur_max_benefit_df}\r\n", log_lv=2, is_slacker=True)
+
+        else:
+            sg.g_logger.write_log(f"분석 결과가 없습니다..cur_max_benefit_df={cur_max_benefit_df}", log_lv=3, is_slacker=True)
+
+        sg.g_logger.write_log(f"작업시간 : {time.time() - start_time}", log_lv=2, is_slacker=False)
         # =======================================
         sys.exit(0)
     except Exception as ex:
@@ -322,8 +334,6 @@ else:
             back_test_arg_list.append(df_data_min)
             back_test_arg_list.append(df_data_day)
             back_test_arg_list.append(stock_name)
-            back_test_arg_list.append(rieki_persent_break)
-
             data = bter.feeds.PandasData(dataname=df_data_min)
 
             cerebro = bter.Cerebro()

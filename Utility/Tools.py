@@ -49,6 +49,21 @@ def write_json(path, path2, naiyou):
     except Exception as e:
         sg.g_logger.write_log(f"Exception occured : {str(e)}", log_lv=5)
 
+def write_json_single(file_path, target_name, naiyou):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as my_read_json:
+            open_json = json.load(my_read_json)
+            open_json[target_name] = naiyou
+
+        with open(file_path, 'w', encoding='utf-8') as my_write_json:
+            json.dump(open_json, my_write_json, indent="\t", ensure_ascii=False)
+
+    except FileNotFoundError as e:
+        sg.g_logger.write_log(f"{file_path}ファイルを見つかりません。 {str(e)}", log_lv=3)
+
+    except Exception as e:
+        sg.g_logger.write_log(f"Exception occured : {str(e)}", log_lv=5)
+
 def powersave():
     # wmic = wmi.WMI()
     # Put the monitor to Off.
