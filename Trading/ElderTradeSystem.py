@@ -53,6 +53,56 @@ class ElderTradeSystem:
         except Exception as e:
             self.__logger.write_log(f"Exception occured {self} print_chart : {str(e)}", log_lv=3)
 
+    def get_macd_stochastic_back_test(self, df, recent_rieki_count_day, recent_rieki_count_day_long, larry_constant_K_anl=None):
+        """
+        MACD,ストキャスティクスを抽出
+        :param stock_name: 株の名前または株のコード
+        :param days_long: 一番長いの何日移動平均か
+        :return: df
+        """
+        try:
+            rieki_persent = 0
+            if larry_constant_K_anl is None:
+                larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
+
+            if df is None or len(df) <= recent_rieki_count_day_long:
+                return None
+
+            df_shift = df.shift().dropna()
+            hennka_price = df['open'] + ((df_shift['high'] - df_shift['low']) * larry_constant_K_anl)
+            hennka_price_pulse = ((df_shift['high'] - df_shift['low']) * larry_constant_K_anl)
+            df = df.assign(hennka_price=hennka_price)
+            df = df.assign(hennka_price_pulse=hennka_price_pulse)
+            df = df.dropna()
+            df = df[df['hennka_price_pulse'] > 0]
+
+            is_hennka_kau = df['hennka_price'] < df['high']
+            is_hennka_rieki = df['hennka_price'] < df['close']
+            is_hennka_not_rieki = df['hennka_price'] >= df['close']
+
+            is_rieki = is_hennka_kau & is_hennka_rieki
+            is_not_rieki = is_hennka_kau & is_hennka_not_rieki
+            rieki_count = is_rieki.sum()
+            recent_rieki_count = is_rieki.iloc[-recent_rieki_count_day:].sum()
+            recent_not_rieki_count = is_not_rieki.iloc[-recent_rieki_count_day:].sum()
+            recent_rieki_count_long = is_rieki.iloc[-recent_rieki_count_day_long:].sum()
+            recent_not_rieki_count_long = is_not_rieki.iloc[-recent_rieki_count_day_long:].sum()
+            hennka_kau_count = is_hennka_kau.sum()
+            if hennka_kau_count > 0:
+                rieki_persent = round((rieki_count / hennka_kau_count) * 100)
+
+            df_analysis = df.iloc[[-1]].assign(rieki_persent=rieki_persent,
+                                               recent_rieki_count=recent_rieki_count,
+                                               recent_not_rieki_count=recent_not_rieki_count,
+                                               recent_rieki_count_long=recent_rieki_count_long,
+                                               recent_not_rieki_count_long=recent_not_rieki_count_long).dropna()
+
+            return df_analysis
+
+        except Exception as e:
+            self.__logger.write_log(f"Exception occured {self} get_MACD : {str(e)}", log_lv=3)
+            return None
+
     def get_macd_stochastic(self, df):
         """
         MACD,ストキャスティクスを抽出
@@ -151,7 +201,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
             return None
 
-    def is_buy_sell_nomal(self, df_day, df_min, df_today):
+    def is_buy_sell_nomal(self, df_day, df_min, df_today, larry_constant_K_anl):
         """
         株を買うか売るか見守るか選択
         :param df_day:
@@ -171,8 +221,8 @@ class ElderTradeSystem:
                 return False
 
             min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
-            larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
-            hennka_price = df_today.open + ((df_day.high - df_day.low) * larry_constant_K_buy)
+            larry_K_buy = (larry_constant_K_anl - sg.g_json_trading_config['larry_constant_K_buy'])
+            hennka_price = df_today.open + ((df_day.high - df_day.low) * larry_K_buy)
 
             recent_rieki_count = df_day.recent_rieki_count
             recent_not_rieki_count = df_day.recent_not_rieki_count

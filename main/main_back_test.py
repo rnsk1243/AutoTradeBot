@@ -35,102 +35,103 @@ is_graph = False
 is_graph_code = '네이처셀'
 cur_stock_name = ""
 
-def make_test_data(df, chart):
-
-    # chart : 0 -> m
-    # chart : 1 -> day
+def silce_data_min(df):
 
     if df is None:
         sg.g_logger.write_log(f"{stock_name} : data 없음", log_lv=3)
         return None
 
-    df_analysis = pd.DataFrame()
+    last_time = df.iloc[-1].date
+    analysis_data = df[df['date'] >= last_time - timedelta(days=test_days)]
+    return analysis_data
+
+def silce_data_day(df):
+
+    if df is None:
+        sg.g_logger.write_log(f"{stock_name} : data 없음", log_lv=3)
+        return None
     last_time = df.iloc[-1].date
 
-    if chart == 0:  # min
-        test_data = df[last_time - timedelta(days=test_days) < df['date']]
-        kurikai = len(test_data)
+    test_data = df[last_time - timedelta(days=test_days) < df['date']]
+    kurikai = len(test_data)
 
-        analysis_data = df[df['date'] >= last_time - timedelta(days=test_days)]
-        # analysis_data = df[df['date'] <= last_time - timedelta(days=test_days)]
-        # analysis_data = analysis_data[analysis_data.iloc[-1].date - timedelta(days=analysis_data_amount_min) < analysis_data['date']]
-        analysis_data_amount = len(analysis_data)
-
-        analysis_amount = ((1 * sg.g_one_day_data_amount) * 9) // 14 # 14일중에 9일이 개장
-        if kurikai < 0 or analysis_data_amount < analysis_amount:
-            sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
-            return None
-        else:
-            return analysis_data
-    elif chart == 1:  # day
-        test_data = df[last_time - timedelta(days=test_days) < df['date']]
-        kurikai = len(test_data)
-
-        # if is_print is False:
-        #     sg.g_logger.write_log(f"\ttest기간\t{kurikai}\t\t", log_lv=2, is_con_print=False)
-        #     is_print = True
-        analysis_data = df[df['date'] <= last_time - timedelta(days=test_days)]
-        if analysis_data is None or len(analysis_data) == 0:
-            return None
-        arg4_analysis_data_amount_day = analysis_data_amount_day
-        analysis_data = analysis_data[analysis_data.iloc[-1].date - timedelta(days=arg4_analysis_data_amount_day) < analysis_data['date']]
-        analysis_data_amount = len(analysis_data)
-
-        # analysis_amount = (arg4_analysis_data_amount_day * 9) // 14  # 14일중에 9일이 개장
-        # if kurikai < 0 or analysis_data_amount < analysis_amount:
-        #     sg.g_logger.write_log(f"{stock_name} : data / {kurikai} 적음", log_lv=3)
-        #     return None
-    else:
+    analysis_data = df[df['date'] <= last_time - timedelta(days=test_days)]
+    if analysis_data is None or len(analysis_data) == 0:
         return None
+    analysis_data = analysis_data[
+        analysis_data.iloc[-1].date - timedelta(days=analysis_data_amount_day) < analysis_data['date']]
+    analysis_data_amount = len(analysis_data)
+
+    return kurikai, analysis_data_amount
+
+def make_test_data(df, recent_rieki_count_day, recent_rieki_count_day_long, min_rieki_amount=1):
+
     try:
+        df_analysis = pd.DataFrame()
+        kurikai, analysis_data_amount = silce_data_day(df)
         # ===================================================================
         for i in range(0, kurikai):
             df_back_data = df[i - (analysis_data_amount + kurikai):i - kurikai]
-            # df_back_data = df[i - (analysis_data_amount + kurikai):i - kurikai - analysis_data_amount + 30]
-            # sg.g_logger.write_log(f"\t{i}\t{df_back_data.iloc[0].date}\t{df_back_data.iloc[-1].date}\t", is_con_print=False, log_lv=2)
-            # df_back_data_len = len(df_back_data)
-
-            # if df_back_data_len < analysis_amount:
-            #     sg.g_logger.write_log(f"{stock_name} : data / {analysis_amount-df_back_data_len} 적음", log_lv=3)
-            #     return None
-
-            # print(f"data amount = {len(df_back_data)}")
-            analysis_series = sg.g_ets.get_macd_stochastic(df_back_data)
+            analysis_series = sg.g_ets.get_macd_stochastic_back_test(df=df_back_data,
+                                                                     recent_rieki_count_day=recent_rieki_count_day,
+                                                                     recent_rieki_count_day_long=recent_rieki_count_day_long)
             if len(analysis_series) == 0:
                 return None
             df_analysis = df_analysis.append(analysis_series)
 
-        # sg.g_logger.write_log(f"\t테스트데이터\t{df_analysis}\t", is_con_print=False, log_lv=2)
-        # for end
-        return df_analysis
+        for df_yester_day in df_analysis.itertuples():
+
+            recent_rieki_count = df_yester_day.recent_rieki_count
+            recent_not_rieki_count = df_yester_day.recent_not_rieki_count
+            recent_rieki_count_long = df_yester_day.recent_rieki_count_long
+            recent_not_rieki_count_long = df_yester_day.recent_not_rieki_count_long
+
+            step2 = recent_not_rieki_count_long < recent_rieki_count_long
+            step3 = (recent_not_rieki_count == 0 and min_rieki_amount <= recent_rieki_count)
+
+            if step2 and step3:
+                return df_analysis
+
+        return None
 
     except Exception as ex:
         print(f"{ex}")
 
 if __name__ == '__main__':
     try:
-        larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
-        larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
         min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
+        cur_larry_constant_K_buy = sg.g_json_trading_config['larry_constant_K_buy']
 
+        cur_larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
         cur_recent_rieki_count_day = sg.g_json_trading_config['recent_rieki_count_day']
         cur_recent_rieki_count_day_long = sg.g_json_trading_config['recent_rieki_count_day_long']
+        delta_k = 0.1
         delta_day = 1
         delta_day_long = cur_recent_rieki_count_day_long // 10
 
-        kumi_list_1 = [cur_recent_rieki_count_day - delta_day * 2,
+        kumi_list_0 = [round((cur_larry_constant_K_anl - delta_k * 1), 1),
+                       round(cur_larry_constant_K_anl, 1),
+                       round((cur_larry_constant_K_anl + delta_k * 1), 1)]
+        kumi_list_1 = [cur_recent_rieki_count_day - delta_day * 4,
+                       cur_recent_rieki_count_day - delta_day * 2,
                        cur_recent_rieki_count_day - delta_day * 1,
                        cur_recent_rieki_count_day,
                        cur_recent_rieki_count_day + delta_day * 1,
-                       cur_recent_rieki_count_day + delta_day * 2]
-        kumi_list_2 = [cur_recent_rieki_count_day_long - delta_day_long * 2,
+                       cur_recent_rieki_count_day + delta_day * 2,
+                       cur_recent_rieki_count_day + delta_day * 4]
+        kumi_list_2 = [cur_recent_rieki_count_day_long - delta_day_long * 4,
+                       cur_recent_rieki_count_day_long - delta_day_long * 2,
                        cur_recent_rieki_count_day_long - delta_day_long * 1,
                        cur_recent_rieki_count_day_long,
                        cur_recent_rieki_count_day_long + delta_day_long * 1,
-                       cur_recent_rieki_count_day_long + delta_day_long * 2]
+                       cur_recent_rieki_count_day_long + delta_day_long * 2,
+                       cur_recent_rieki_count_day_long + delta_day_long * 4]
 
-        p = itertools.product(kumi_list_1, kumi_list_2)
-        sg.g_logger.write_log(f"\r\n back test 시작 \r\nkumi_list_1: {kumi_list_1}\r\nkumi_list_2: {kumi_list_2}\r\n", log_lv=2, is_slacker=True)
+        p = itertools.product(kumi_list_0, kumi_list_1, kumi_list_2)
+        sg.g_logger.write_log(f"back test 시작 \r\n"
+                              f"kumi_list_k: {kumi_list_0} \r\n"
+                              f"kumi_list_day: {kumi_list_1}\r\n"
+                              f"kumi_list_day_long: \r\n{kumi_list_2}", log_lv=2, is_slacker=True)
         xlsx_analysis = pd.DataFrame()
 
         # folder 作成
@@ -142,8 +143,10 @@ if __name__ == '__main__':
         for kumi_tuple in p:
 
             xlsx_analysis_detail = pd.DataFrame()
-            recent_rieki_count_day = kumi_tuple[0]
-            recent_rieki_count_day_long = kumi_tuple[1]
+            larry_constant_K_anl = float(kumi_tuple[0])
+            larry_constant_K_buy = float(larry_constant_K_anl - cur_larry_constant_K_buy)
+            recent_rieki_count_day = kumi_tuple[1]
+            recent_rieki_count_day_long = kumi_tuple[2]
 
             cumulative_benefit = 0
             cumulative_benefit_ave = 0
@@ -154,17 +157,23 @@ if __name__ == '__main__':
             for stock_code in test_target_stock_list:
                 stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
                 cur_stock_name = stock_name
+                ############# day #############
+                df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day,
+                                                             day_ago_end=recent_rieki_count_day_long_end,
+                                                             chart_type="D")
+                df_data_day = make_test_data(df_day, recent_rieki_count_day=recent_rieki_count_day,
+                                             recent_rieki_count_day_long=recent_rieki_count_day_long)
+                if df_data_day is None:
+                    sg.g_logger.write_log(f"테스트기간중 매매가 발생 하지 않음 : \t{stock_name}\t", log_lv=2, is_slacker=False)
+                    continue
+                ############# day #############
+                ############# min #############
                 df_min = sg.g_market_db.get_past_stock_price(stock_code, 20,
                                                              day_ago_end=recent_rieki_count_day_long_end)
-                df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day,
-                                                             day_ago_end=recent_rieki_count_day_long_end, chart_type="D")
-
-                df_data_day = make_test_data(df_day, 1)
-                if df_data_day is None:
-                    continue
-                df_data_min = make_test_data(df_min, 0)
+                df_data_min = silce_data_min(df_min)
                 if df_data_min is None:
                     continue
+                ############# min #############
 
                 back_test_arg_list = []
                 bt_obj = bt.BackTest
@@ -173,6 +182,7 @@ if __name__ == '__main__':
                 back_test_arg_list.append(sg.g_ets)
                 back_test_arg_list.append(df_data_min)
                 back_test_arg_list.append(df_data_day)
+                back_test_arg_list.append(larry_constant_K_anl)
                 data = bter.feeds.PandasData(dataname=df_data_min)
 
                 cerebro = bter.Cerebro()
@@ -201,7 +211,8 @@ if __name__ == '__main__':
                     benefit_NO += 1
 
                 cur_bene_money_pro = round(((cur_benefit / money) * 100), 2)
-                print(f"Result : \t{stock_name}\t{(cur_benefit):,.0f}\t{cur_bene_money_pro}\t KRW")
+                sg.g_logger.write_log(f"Result : \t{stock_name}\t{(cur_benefit):,.0f}\t{cur_bene_money_pro}\t KRW",
+                                      log_lv=2, is_slacker=False)
                 xlsx_analysis_detail = xlsx_analysis_detail.append({"stock_name": stock_name,
                                                                     "cur_benefit": cur_benefit,
                                                                     "cur_bene_money_pro": cur_bene_money_pro},
@@ -268,18 +279,23 @@ if __name__ == '__main__':
 
         if cur_max_benefit_df is not None and len(cur_max_benefit_df) > 0:
             sg.g_logger.write_log("새 분석 결과를 반영합니다.", log_lv=2, is_slacker=True)
+            new_larry_constant_K_anl = float(cur_max_benefit_df.larry_constant_K_anl)
             new_recent_rieki_count_day = int(cur_max_benefit_df.recent_rieki_count_day)
             new_recent_rieki_count_day_long = int(cur_max_benefit_df.recent_rieki_count_day_long)
             new_cumulative_benefit = int(cur_max_benefit_df.cumulative_benefit)
 
+            tool.write_json_single(path_trading_config, "larry_constant_K_anl", new_larry_constant_K_anl)
             tool.write_json_single(path_trading_config, "recent_rieki_count_day", new_recent_rieki_count_day)
             tool.write_json_single(path_trading_config, "recent_rieki_count_day_long", new_recent_rieki_count_day_long)
 
+            hennka_k = new_larry_constant_K_anl - cur_larry_constant_K_anl
             hennka_count_day = new_recent_rieki_count_day - cur_recent_rieki_count_day
             hennka_count_day_long = new_recent_rieki_count_day_long - cur_recent_rieki_count_day_long
 
-            sg.g_logger.write_log(f"새 분석 결과 내용1:\r\n{new_recent_rieki_count_day} / 증감:({hennka_count_day})", log_lv=2, is_slacker=True)
-            sg.g_logger.write_log(f"새 분석 결과 내용2:\r\n{new_recent_rieki_count_day_long} / 증감:({hennka_count_day_long})", log_lv=2, is_slacker=True)
+            sg.g_logger.write_log(f"새 분석 결과 larry_k:\r\n{new_larry_constant_K_anl} / 증감:({hennka_k})", log_lv=2,
+                                  is_slacker=True)
+            sg.g_logger.write_log(f"새 분석 결과 day:\r\n{new_recent_rieki_count_day} / 증감:({hennka_count_day})", log_lv=2, is_slacker=True)
+            sg.g_logger.write_log(f"새 분석 결과 day_long:\r\n{new_recent_rieki_count_day_long} / 증감:({hennka_count_day_long})", log_lv=2, is_slacker=True)
             sg.g_logger.write_log(f"새 누적 수익:\r\n{new_cumulative_benefit}", log_lv=2, is_slacker=True)
             sg.g_logger.write_log(f"상세 결과 내용:\r\n{cur_max_benefit_df}\r\n", log_lv=2, is_slacker=True)
 
@@ -294,21 +310,24 @@ if __name__ == '__main__':
 
 else:
     try:
+
         xlsx_analysis_ascending_true_m = pd.DataFrame()
         xlsx_analysis_ascending_false_m = pd.DataFrame()
         xlsx_analysis_ascending_true_d = pd.DataFrame()
         xlsx_analysis_ascending_false_d = pd.DataFrame()
+        cur_larry_constant_K_anl = sg.g_json_trading_config['larry_constant_K_anl']
 
         for stock_code in test_target_stock_list:
             stock_name = sg.g_market_db.get_stock_name(stock_code=stock_code)
-            df_min = sg.g_market_db.get_past_stock_price(stock_code, 50, day_ago_end=recent_rieki_count_day_long_end)
             df_day = sg.g_market_db.get_past_stock_price(stock_code, analysis_data_amount_day,
                                                          recent_rieki_count_day_long_end, chart_type="D")
 
-            df_data_day = make_test_data(df_day, 1)
+            df_data_day = make_test_data(df_day, 12, 800)
             if df_data_day is None:
                 continue
-            df_data_min = make_test_data(df_min, 0)
+
+            df_min = sg.g_market_db.get_past_stock_price(stock_code, 50, day_ago_end=recent_rieki_count_day_long_end)
+            df_data_min = silce_data_min(df_min)
             if df_data_min is None:
                 continue
 
@@ -333,7 +352,7 @@ else:
             back_test_arg_list.append(sg.g_ets)
             back_test_arg_list.append(df_data_min)
             back_test_arg_list.append(df_data_day)
-            back_test_arg_list.append(stock_name)
+            back_test_arg_list.append(cur_larry_constant_K_anl)
             data = bter.feeds.PandasData(dataname=df_data_min)
 
             cerebro = bter.Cerebro()

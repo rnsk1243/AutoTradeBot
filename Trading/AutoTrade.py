@@ -147,7 +147,8 @@ def get_target_price(code):
             today_open = lastday[3]
         lastday_high = lastday[1]
         lastday_low = lastday[2]
-        target_price = today_open + (lastday_high - lastday_low) * sg.g_json_trading_config['larry_constant_K_buy']
+        larry_k = sg.g_json_trading_config['larry_constant_K_anl'] - sg.g_json_trading_config['larry_constant_K_buy']
+        target_price = today_open + (lastday_high - lastday_low) * larry_k
         return target_price
     except Exception as ex:
         sg.g_logger.write_log(f"get_target_price() -> exception! : "
