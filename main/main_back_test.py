@@ -296,7 +296,7 @@ if __name__ == '__main__':
                                   is_slacker=True)
             sg.g_logger.write_log(f"새 분석 결과 day:\r\n{new_recent_rieki_count_day} / 증감:({hennka_count_day})", log_lv=2, is_slacker=True)
             sg.g_logger.write_log(f"새 분석 결과 day_long:\r\n{new_recent_rieki_count_day_long} / 증감:({hennka_count_day_long})", log_lv=2, is_slacker=True)
-            sg.g_logger.write_log(f"새 누적 수익:\r\n{new_cumulative_benefit}", log_lv=2, is_slacker=True)
+            sg.g_logger.write_log(f"새 누적 수익:\r\n{(new_cumulative_benefit):,.0f}", log_lv=2, is_slacker=True)
             sg.g_logger.write_log(f"상세 결과 내용:\r\n{cur_max_benefit_df}\r\n", log_lv=2, is_slacker=True)
 
         else:
