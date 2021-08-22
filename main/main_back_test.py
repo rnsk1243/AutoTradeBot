@@ -288,7 +288,7 @@ if __name__ == '__main__':
             tool.write_json_single(path_trading_config, "recent_rieki_count_day", new_recent_rieki_count_day)
             tool.write_json_single(path_trading_config, "recent_rieki_count_day_long", new_recent_rieki_count_day_long)
 
-            hennka_k = new_larry_constant_K_anl - cur_larry_constant_K_anl
+            hennka_k = round((new_larry_constant_K_anl - cur_larry_constant_K_anl), 2)
             hennka_count_day = new_recent_rieki_count_day - cur_recent_rieki_count_day
             hennka_count_day_long = new_recent_rieki_count_day_long - cur_recent_rieki_count_day_long
 
