@@ -31,6 +31,7 @@ benefit_NO = 0
 analysis_data_amount_day = sg.g_json_trading_config['analysis_data_amount_day']
 recent_rieki_count_day_long_end = sg.g_json_trading_config['recent_rieki_count_day_long_end']
 test_days = sg.g_json_trading_config['back_test_days']  # day
+
 is_graph = False
 is_graph_code = '네이처셀'
 cur_stock_name = ""
@@ -109,9 +110,11 @@ if __name__ == '__main__':
         delta_day = 1
         delta_day_long = cur_recent_rieki_count_day_long // 10
 
-        kumi_list_0 = [round((cur_larry_constant_K_anl - delta_k * 1), 1),
+        kumi_list_0 = [round((cur_larry_constant_K_anl - delta_k * 2), 1),
+                       round((cur_larry_constant_K_anl - delta_k * 1), 1),
                        round(cur_larry_constant_K_anl, 1),
-                       round((cur_larry_constant_K_anl + delta_k * 1), 1)]
+                       round((cur_larry_constant_K_anl + delta_k * 1), 1),
+                       round((cur_larry_constant_K_anl + delta_k * 2), 1)]
         kumi_list_1 = [cur_recent_rieki_count_day - delta_day * 4,
                        cur_recent_rieki_count_day - delta_day * 2,
                        cur_recent_rieki_count_day - delta_day * 1,
@@ -144,7 +147,7 @@ if __name__ == '__main__':
 
             xlsx_analysis_detail = pd.DataFrame()
             larry_constant_K_anl = float(kumi_tuple[0])
-            larry_constant_K_buy = float(larry_constant_K_anl - cur_larry_constant_K_buy)
+            larry_constant_K_buy = round((float(larry_constant_K_anl - cur_larry_constant_K_buy)), 1)
             recent_rieki_count_day = kumi_tuple[1]
             recent_rieki_count_day_long = kumi_tuple[2]
 
@@ -164,7 +167,8 @@ if __name__ == '__main__':
                 df_data_day = make_test_data(df_day, recent_rieki_count_day=recent_rieki_count_day,
                                              recent_rieki_count_day_long=recent_rieki_count_day_long)
                 if df_data_day is None:
-                    sg.g_logger.write_log(f"테스트기간중 매매가 발생 하지 않음 : \t{stock_name}\t", log_lv=2, is_slacker=False)
+                    sg.g_logger.write_log(f"테스트기간중 매매가 발생 하지 않음 : \t{stock_name}\t", log_lv=2, is_slacker=False
+                                          , is_con_print=False)
                     continue
                 ############# day #############
                 ############# min #############
@@ -183,6 +187,8 @@ if __name__ == '__main__':
                 back_test_arg_list.append(df_data_min)
                 back_test_arg_list.append(df_data_day)
                 back_test_arg_list.append(larry_constant_K_anl)
+                back_test_arg_list.append(df_day.iloc[-1].open)
+                back_test_arg_list.append(df_data_day.iloc[-1])
                 data = bter.feeds.PandasData(dataname=df_data_min)
 
                 cerebro = bter.Cerebro()
@@ -353,6 +359,8 @@ else:
             back_test_arg_list.append(df_data_min)
             back_test_arg_list.append(df_data_day)
             back_test_arg_list.append(cur_larry_constant_K_anl)
+            back_test_arg_list.append(df_day.iloc[-1].open)
+            back_test_arg_list.append(df_data_day.iloc[-1])
             data = bter.feeds.PandasData(dataname=df_data_min)
 
             cerebro = bter.Cerebro()

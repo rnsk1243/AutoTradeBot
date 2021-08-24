@@ -201,7 +201,7 @@ class ElderTradeSystem:
             self.__logger.write_log(f"Exception occured {self} is_buy_sell : {str(e)}", log_lv=3)
             return None
 
-    def is_buy_sell_nomal(self, df_day, df_min, df_today, larry_constant_K_anl):
+    def is_buy_sell_nomal(self, df_day, df_min, df_today_open, larry_constant_K_anl):
         """
         株を買うか売るか見守るか選択
         :param df_day:
@@ -222,7 +222,7 @@ class ElderTradeSystem:
 
             min_rieki_amount = sg.g_json_trading_config['min_rieki_amount']
             larry_K_buy = (larry_constant_K_anl - sg.g_json_trading_config['larry_constant_K_buy'])
-            hennka_price = df_today.open + ((df_day.high - df_day.low) * larry_K_buy)
+            hennka_price = df_today_open + ((df_day.high - df_day.low) * larry_K_buy)
 
             recent_rieki_count = df_day.recent_rieki_count
             recent_not_rieki_count = df_day.recent_not_rieki_count
