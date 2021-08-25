@@ -110,11 +110,9 @@ if __name__ == '__main__':
         delta_day = 1
         delta_day_long = cur_recent_rieki_count_day_long // 10
 
-        kumi_list_0 = [round((cur_larry_constant_K_anl - delta_k * 2), 1),
-                       round((cur_larry_constant_K_anl - delta_k * 1), 1),
+        kumi_list_0 = [round((cur_larry_constant_K_anl - delta_k * 1), 1),
                        round(cur_larry_constant_K_anl, 1),
-                       round((cur_larry_constant_K_anl + delta_k * 1), 1),
-                       round((cur_larry_constant_K_anl + delta_k * 2), 1)]
+                       round((cur_larry_constant_K_anl + delta_k * 1), 1)]
         kumi_list_1 = [cur_recent_rieki_count_day - delta_day * 4,
                        cur_recent_rieki_count_day - delta_day * 2,
                        cur_recent_rieki_count_day - delta_day * 1,
