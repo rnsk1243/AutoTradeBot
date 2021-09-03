@@ -569,7 +569,7 @@ class Creon:
             sg.g_cpOrder.SetInputValue(3, code)  # 종목코드
             sg.g_cpOrder.SetInputValue(4, buy_qty)  # 매수할 수량
             sg.g_cpOrder.SetInputValue(7, "1")  # 주문조건 0:기본, 1:IOC, 2:FOK
-            sg.g_cpOrder.SetInputValue(8, "12")  # 주문호가 1:보통, 3:시장가
+            sg.g_cpOrder.SetInputValue(8, "13")  # 주문호가 1:보통(지정가), 12:최유리, 13:최우선
             # 5:조건부, 12:최유리, 13:최우선
             self.__check_and_wait(LT_NONTRADE_REQUEST)  # 要請可能か？チェック
             # 매수 주문 요청

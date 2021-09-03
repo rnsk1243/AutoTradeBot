@@ -155,7 +155,7 @@ def init_global():
         g_t_taiki = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
         g_t_start = datetime.now().replace(hour=9, minute=5, second=0, microsecond=0)
         g_t_buy_end = datetime.now().replace(hour=15, minute=0, second=0, microsecond=0)
-        g_t_sell_start = datetime.now().replace(hour=15, minute=15, second=0, microsecond=0)
+        g_t_sell_start = datetime.now().replace(hour=15, minute=19, second=0, microsecond=0)
         g_t_stock_end = datetime.now().replace(hour=15, minute=20, second=0, microsecond=0)
         g_t_stock_end_30 = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)
         # =============================================
